@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mini Aplikasi Pencatatan Keuangan
+
+Aplikasi ini bertujuan membantu pengguna (individu atau usaha kecil) mencatat arus kas (dana masuk dan keluar) per periode bulan-tahun, dengan dukungan otentikasi Google, manajemen vendor, serta laporan keuangan sederhana. Aplikasi dibangun dengan pendekatan **mobile-first**, mendukung **dark mode**, dan menggunakan **Next.js (App Router)** + **Firebase Firestore** + **Tailwind CSS** + **Material UI**.
+
+## Fitur Utama
+
+- **Pencatatan Keuangan**: Mudah dan cepat mengelola saldo dana masuk dan keluar per periode.
+- **Laporan Keuangan**: Laporan sisa saldo, total masuk, dan total keluar per periode.
+- **Otentikasi**: Akses aman melalui Google Sign-In.
+- **Manajemen Vendor**: Buat atau gabung dengan kode unik vendor setelah login.
+- **Mobile-first & Dark Mode**: Desain responsif dan dukungan mode gelap.
+
+## Tech Stack
+
+- **Runtime**: Bun
+- **Framework**: Next.js (App Router)
+- **Bahasa**: TypeScript
+- **UI Library**: Tailwind CSS + Material UI
+- **Database & Auth**: Firebase (Firestore & Authentication)
 
 ## Getting Started
 
-First, run the development server:
+Pastikan Anda telah menginstal [Bun](https://bun.sh/) di sistem Anda.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Install dependencies:
+   ```bash
+   bun install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Jalankan development server:
+   ```bash
+   bun run dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Buka [http://localhost:3000](http://localhost:3000) di browser untuk melihat aplikasi.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+Proyek ini telah dikonfigurasi untuk kemudahan deploy ke [Vercel](https://vercel.com). Vercel CLI telah ditambahkan sebagai *dev dependency*. Anda dapat menggunakan Makefile yang tersedia untuk mendeploy aplikasi:
 
-To learn more about Next.js, take a look at the following resources:
+- **Preview Deployment**:
+  ```bash
+  make deploy-preview
+  ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Production Deployment**:
+  ```bash
+  make deploy-prod
+  ```
