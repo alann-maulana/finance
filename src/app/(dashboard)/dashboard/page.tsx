@@ -26,34 +26,8 @@ import { useAppContext } from '@/lib/context/AppContext';
 import { getDashboardData } from '@/lib/firebase/firestore';
 import type { DashboardData } from '@/types';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const INDONESIAN_MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-];
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDateTime(date: Date | null): string {
-  if (!date) return '—';
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
+import { INDONESIAN_MONTHS } from '@/lib/constants';
+import { formatRupiah, formatDateTime } from '@/lib/formatters';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 

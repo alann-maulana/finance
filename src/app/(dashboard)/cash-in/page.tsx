@@ -46,79 +46,9 @@ import {
 import type { Transaction } from '@/types';
 import type { TransactionCursor } from '@/lib/firebase/firestore';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 10;
-
-const MONTHS = [
-  { value: 1, label: 'Januari' },
-  { value: 2, label: 'Februari' },
-  { value: 3, label: 'Maret' },
-  { value: 4, label: 'April' },
-  { value: 5, label: 'Mei' },
-  { value: 6, label: 'Juni' },
-  { value: 7, label: 'Juli' },
-  { value: 8, label: 'Agustus' },
-  { value: 9, label: 'September' },
-  { value: 10, label: 'Oktober' },
-  { value: 11, label: 'November' },
-  { value: 12, label: 'Desember' },
-];
-
-const now = new Date();
-const CURRENT_YEAR = now.getFullYear();
-const CURRENT_MONTH = now.getMonth() + 1;
-
-function buildYearOptions(): number[] {
-  const years: number[] = [];
-  for (let y = CURRENT_YEAR + 1; y >= 2020; y--) years.push(y);
-  return years;
-}
-const YEAR_OPTIONS = buildYearOptions();
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDateTime(date: Date | null): string {
-  if (!date) return '—';
-  return new Intl.DateTimeFormat('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function monthLabel(month: number): string {
-  return MONTHS.find((m) => m.value === month)?.label ?? String(month);
-}
-
-// ─── Period helpers ───────────────────────────────────────────────────────────
-
-function parsePeriod(raw: string | null): { year: number; month: number } {
-  if (raw) {
-    const parts = raw.split('-');
-    const y = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10);
-    if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
-      return { year: y, month: m };
-    }
-  }
-  return { year: CURRENT_YEAR, month: CURRENT_MONTH };
-}
-
-function periodParam(year: number, month: number): string {
-  return `${year}-${month.toString().padStart(2, '0')}`;
-}
+import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/lib/constants';
+import { formatRupiah, formatDateTime } from '@/lib/formatters';
+import { monthLabel, parsePeriod, periodParam } from '@/lib/helpers';
 
 // ─── Skeleton items ───────────────────────────────────────────────────────────
 
