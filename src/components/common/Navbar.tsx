@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
@@ -22,12 +21,8 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    const idx = NAV_ITEMS.findIndex((item) => pathname.startsWith(item.path));
-    setValue(idx !== -1 ? idx : 0);
-  }, [pathname]);
+  const idx = NAV_ITEMS.findIndex((item) => pathname.startsWith(item.path));
+  const value = idx !== -1 ? idx : 0;
 
   return (
     <Paper
@@ -42,9 +37,9 @@ export default function Navbar() {
       }}
     >
       <BottomNavigation
+        showLabels
         value={value}
         onChange={(_, newValue: number) => {
-          setValue(newValue);
           router.push(NAV_ITEMS[newValue].path);
         }}
       >
