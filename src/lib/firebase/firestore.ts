@@ -10,10 +10,22 @@ import {
   runTransaction,
   orderBy,
   limit,
+  startAfter,
   Timestamp,
+  QueryDocumentSnapshot,
+  DocumentData,
+  QueryConstraint,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { Transaction, DashboardData } from '@/types';
+
+export type TransactionCursor = QueryDocumentSnapshot<DocumentData> | null;
+
+export interface TransactionPage {
+  transactions: Transaction[];
+  cursor: TransactionCursor;
+  hasMore: boolean;
+}
 
 export interface VendorInfo {
   vendorId: string;
@@ -55,7 +67,7 @@ function toDate(val: unknown): Date | null {
 
 /** Formats a period string from year + month numbers: "2025-5" */
 function periodKey(year: number, month: number): string {
-  return `${year}-${month}`;
+  return `${year}-${month.toString().padStart(2, '0')}`;
 }
 
 /** Firestore doc ID for a period balance: "${vendorId}_${year}-${month}" */
@@ -216,7 +228,8 @@ export async function updateBalanceForTransaction(
   amount: number,
   type: 'IN' | 'OUT',
   note: string,
-  createdBy: string
+  createdBy: string,
+  createdByName?: string | null
 ): Promise<string> {
   const period = periodKey(year, month);
   const balRef = doc(db, 'periodBalances', balanceDocId(vendorId, year, month));
@@ -258,6 +271,7 @@ export async function updateBalanceForTransaction(
       month,
       note: note.trim(),
       createdBy,
+      createdByName: createdByName ?? null,
       createdAt: serverTimestamp(),
     });
   });
@@ -329,3 +343,58 @@ export async function getDashboardData(
 
   return { totalIn, totalOut, currentBalance, recentTransactions };
 }
+
+// ─── Cash-In Paginated Query ──────────────────────────────────────────────────
+
+/**
+ * Fetches a paginated page of IN transactions for the given vendor + period.
+ * Pass `cursor` (the last document from the previous page) to get the next page.
+ */
+export async function getCashInTransactions(
+  vendorId: string,
+  period: string,
+  pageSize: number,
+  cursor?: TransactionCursor
+): Promise<TransactionPage> {
+  const constraints: QueryConstraint[] = [
+    where('vendorId', '==', vendorId),
+    where('type', '==', 'IN'),
+    where('period', '==', period),
+    orderBy('createdAt', 'desc'),
+    limit(pageSize),
+  ];
+
+  if (cursor) {
+    constraints.push(startAfter(cursor));
+  }
+
+  const q = query(collection(db, 'transactions'), ...constraints);
+  const snap = await getDocs(q);
+
+  const transactions: Transaction[] = snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      vendorId: data.vendorId,
+      type: data.type as 'IN' | 'OUT',
+      amount: data.amount as number,
+      period: data.period,
+      year: data.year,
+      month: data.month,
+      note: data.note,
+      createdBy: data.createdBy,
+      createdByName: data.createdByName ?? null,
+      createdAt: toDate(data.createdAt),
+    };
+  });
+
+  const lastDoc: TransactionCursor =
+    snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+  return {
+    transactions,
+    cursor: lastDoc,
+    hasMore: snap.docs.length === pageSize,
+  };
+}
+

@@ -32,6 +32,7 @@ export interface Transaction {
   month: number;
   note?: string;
   createdBy: string;
+  createdByName?: string | null;
   createdAt: Date | null;
 }
 
