@@ -41,3 +41,10 @@ export interface AppUser {
   displayName: string | null;
   photoURL: string | null;
 }
+
+export interface DashboardData {
+  totalIn: number;
+  totalOut: number;
+  currentBalance: number;
+  recentTransactions: Transaction[];
+}
