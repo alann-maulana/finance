@@ -1,0 +1,70 @@
+name: Deploy to Vercel Production
+
+on:
+  push:
+    tags:
+      - '*' # Menjalankan action untuk setiap tag baru yang di-push. Bisa diubah ke 'v*' jika ingin membatasi (contoh: v1.0.0)
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+
+jobs:
+  deploy:
+    name: Deploy to Vercel Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Mengambil seluruh riwayat commit agar bisa memeriksa relasi branch
+
+      - name: Verify Tag is on main Branch
+        run: |
+          # Ambil referensi branch main dari origin
+          git fetch origin main
+          
+          # Periksa apakah commit tag saat ini ada di dalam histori branch main
+          if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+            echo "=========================================================="
+            echo "ERROR: Tag yang di-push tidak berada di branch 'main'!"
+            echo "Deploy ke Vercel Production hanya diperbolehkan untuk tag"
+            echo "yang dibuat langsung dari branch 'main'."
+            echo "=========================================================="
+            exit 1
+          fi
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Cache Next.js Build
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Pull Vercel Environment Information
+        run: bun x vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Project Artifacts
+        run: bun x vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel Production
+        run: bun x vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
