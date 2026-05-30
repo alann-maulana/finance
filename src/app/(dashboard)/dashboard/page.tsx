@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import useSWR from 'swr';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -17,6 +16,8 @@ import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceW
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
@@ -100,10 +101,26 @@ export default function DashboardPage() {
   const { user, vendorId, vendorCode, vendorName, vendorRole } = useAppContext();
   const [copied, setCopied] = useState(false);
 
-  const now = useMemo(() => new Date(), []);
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1; // 1-based
-  const periodLabel = `${INDONESIAN_MONTHS[now.getMonth()]} ${year}`;
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth() + 1;
+  const periodLabel = `${INDONESIAN_MONTHS[month - 1]} ${year}`;
+
+  const handlePrevMonth = () => {
+    setSelectedDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setSelectedDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
+  };
 
   const { data, error, isLoading } = useSWR<DashboardData>(
     vendorId ? ['dashboard', vendorId, year, month] : null,
@@ -164,11 +181,25 @@ export default function DashboardPage() {
         }}
       >
         <CardContent sx={{ py: '20px !important' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <AccessTimeRoundedIcon sx={{ fontSize: 16, opacity: 0.8 }} />
-            <Typography variant="caption" sx={{ opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Periode Saat Ini
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <AccessTimeRoundedIcon sx={{ fontSize: 16, opacity: 0.8 }} />
+              <Typography variant="caption" sx={{ opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                Periode Dashboard
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Tooltip title="Bulan Sebelumnya">
+                <IconButton size="small" onClick={handlePrevMonth} sx={{ color: 'white', opacity: 0.8, '&:hover': { opacity: 1, bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <ChevronLeftRoundedIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Bulan Selanjutnya">
+                <IconButton size="small" onClick={handleNextMonth} sx={{ color: 'white', opacity: 0.8, '&:hover': { opacity: 1, bgcolor: 'rgba(255,255,255,0.1)' } }}>
+                  <ChevronRightRoundedIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
           <Typography variant="h4" fontWeight={800} sx={{ color: '#fff' }}>
             {periodLabel}

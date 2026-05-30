@@ -308,6 +308,7 @@ export async function getDashboardData(
       query(
         collection(db, 'transactions'),
         where('vendorId', '==', vendorId),
+        where('period', '==', period),
         orderBy('createdAt', 'desc'),
         limit(5)
       )
