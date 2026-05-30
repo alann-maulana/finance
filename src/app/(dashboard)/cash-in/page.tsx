@@ -48,7 +48,6 @@ import type { TransactionCursor } from '@/lib/firebase/firestore';
 
 import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/lib/constants';
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
-import { monthLabel, parsePeriod, periodParam } from '@/lib/helpers';
 
 // ─── Skeleton items ───────────────────────────────────────────────────────────
 
@@ -136,10 +135,8 @@ function CashInContent() {
   const [, startRouterTransition] = useTransition();
 
   // ── Period filter ────────────────────────────────────────────────────────
-  const { year: filterYear, month: filterMonth } = parsePeriod(
-    searchParams.get('period')
-  );
-  const period = periodParam(filterYear, filterMonth);
+  const urlYear = parseInt(searchParams.get('year') ?? '', 10);
+  const filterYear = !isNaN(urlYear) ? urlYear : CURRENT_YEAR;
 
   // ── List state ───────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -174,7 +171,7 @@ function CashInContent() {
     setLoading(true);
     setListError(null);
     try {
-      const page = await getCashInTransactions(vendorId, period, PAGE_SIZE);
+      const page = await getCashInTransactions(vendorId, filterYear, PAGE_SIZE);
       setTransactions(page.transactions);
       setCursor(page.cursor);
       setHasMore(page.hasMore);
@@ -186,7 +183,7 @@ function CashInContent() {
     } finally {
       setLoading(false);
     }
-  }, [vendorId, period]);
+  }, [vendorId, filterYear]);
 
   useEffect(() => {
     setTransactions([]);
@@ -200,7 +197,7 @@ function CashInContent() {
     if (!vendorId || loadingMore || !hasMore) return;
     setLoadingMore(true);
     try {
-      const page = await getCashInTransactions(vendorId, period, PAGE_SIZE, cursor ?? undefined);
+      const page = await getCashInTransactions(vendorId, filterYear, PAGE_SIZE, cursor ?? undefined);
       setTransactions((prev) => [...prev, ...page.transactions]);
       setCursor(page.cursor);
       setHasMore(page.hasMore);
@@ -209,7 +206,7 @@ function CashInContent() {
     } finally {
       setLoadingMore(false);
     }
-  }, [vendorId, period, cursor, hasMore, loadingMore]);
+  }, [vendorId, filterYear, cursor, hasMore, loadingMore]);
 
   // ── IntersectionObserver for infinite scroll ─────────────────────────────
   useEffect(() => {
@@ -226,9 +223,9 @@ function CashInContent() {
   }, [loadMore]);
 
   // ── Period filter change ─────────────────────────────────────────────────
-  function handleFilterChange(newYear: number, newMonth: number) {
+  function handleFilterChange(newYear: number) {
     startRouterTransition(() => {
-      router.push(`/cash-in?period=${periodParam(newYear, newMonth)}`);
+      router.push(`/cash-in?year=${newYear}`);
     });
   }
 
@@ -267,10 +264,7 @@ function CashInContent() {
       setModalOpen(false);
       setSnack({ open: true, message: 'Dana masuk berhasil dicatat!', severity: 'success' });
       // Refresh the list if the submitted period matches the current filter
-      if (
-        formYear === filterYear &&
-        formMonth === filterMonth
-      ) {
+      if (formYear === filterYear) {
         fetchFirstPage();
       }
     } catch (err) {
@@ -313,28 +307,14 @@ function CashInContent() {
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <FormControl size="small" sx={{ flex: 1 }}>
-              <InputLabel id="filter-month-label">Bulan</InputLabel>
-              <Select
-                labelId="filter-month-label"
-                id="filter-month"
-                value={filterMonth}
-                label="Bulan"
-                onChange={(e) => handleFilterChange(filterYear, e.target.value as number)}
-              >
-                {MONTHS.map((m) => (
-                  <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ width: 100 }}>
+            <FormControl size="small" sx={{ width: 120 }}>
               <InputLabel id="filter-year-label">Tahun</InputLabel>
               <Select
                 labelId="filter-year-label"
                 id="filter-year"
                 value={filterYear}
                 label="Tahun"
-                onChange={(e) => handleFilterChange(e.target.value as number, filterMonth)}
+                onChange={(e) => handleFilterChange(e.target.value as number)}
               >
                 {YEAR_OPTIONS.map((y) => (
                   <MenuItem key={y} value={y}>{y}</MenuItem>
@@ -348,7 +328,7 @@ function CashInContent() {
             <Chip
               size="small"
               icon={<TrendingUpRoundedIcon sx={{ fontSize: '14px !important', color: '#34D399 !important' }} />}
-              label={`${monthLabel(filterMonth)} ${filterYear}`}
+              label={`Tahun ${filterYear}`}
               sx={{
                 background: 'rgba(52,211,153,0.12)',
                 color: '#34D399',

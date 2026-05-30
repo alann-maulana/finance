@@ -353,14 +353,14 @@ export async function getDashboardData(
  */
 export async function getCashInTransactions(
   vendorId: string,
-  period: string,
+  year: number,
   pageSize: number,
   cursor?: TransactionCursor
 ): Promise<TransactionPage> {
   const constraints: QueryConstraint[] = [
     where('vendorId', '==', vendorId),
     where('type', '==', 'IN'),
-    where('period', '==', period),
+    where('year', '==', year),
     orderBy('createdAt', 'desc'),
     limit(pageSize),
   ];
