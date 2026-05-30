@@ -17,7 +17,7 @@ import {
   QueryConstraint,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { Transaction, DashboardData } from '@/types';
+import type { Transaction, DashboardData, ReportData } from '@/types';
 
 export type TransactionCursor = QueryDocumentSnapshot<DocumentData> | null;
 
@@ -398,3 +398,92 @@ export async function getCashInTransactions(
   };
 }
 
+/**
+ * Fetches a paginated page of OUT transactions for the given vendor + period.
+ * Pass `cursor` (the last document from the previous page) to get the next page.
+ */
+export async function getCashOutTransactions(
+  vendorId: string,
+  period: string,
+  pageSize: number,
+  cursor?: TransactionCursor
+): Promise<TransactionPage> {
+  const constraints: QueryConstraint[] = [
+    where('vendorId', '==', vendorId),
+    where('type', '==', 'OUT'),
+    where('period', '==', period),
+    orderBy('createdAt', 'desc'),
+    limit(pageSize),
+  ];
+
+  if (cursor) {
+    constraints.push(startAfter(cursor));
+  }
+
+  const q = query(collection(db, 'transactions'), ...constraints);
+  const snap = await getDocs(q);
+
+  const transactions: Transaction[] = snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      vendorId: data.vendorId,
+      type: data.type as 'IN' | 'OUT',
+      amount: data.amount as number,
+      period: data.period,
+      year: data.year,
+      month: data.month,
+      note: data.note,
+      createdBy: data.createdBy,
+      createdByName: data.createdByName ?? null,
+      createdAt: toDate(data.createdAt),
+    };
+  });
+
+  const lastDoc: TransactionCursor =
+    snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
+
+  return {
+    transactions,
+    cursor: lastDoc,
+    hasMore: snap.docs.length === pageSize,
+  };
+}
+
+/**
+ * Fetches report data for a specific vendor and period.
+ */
+export async function getReportData(
+  vendorId: string,
+  year: number,
+  month: number
+): Promise<ReportData> {
+  const period = periodKey(year, month);
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+
+  const [periodSnap, balSnap, prevBalSnap] = await Promise.all([
+    getDocs(
+      query(
+        collection(db, 'transactions'),
+        where('vendorId', '==', vendorId),
+        where('period', '==', period)
+      )
+    ),
+    getDoc(doc(db, 'periodBalances', balanceDocId(vendorId, year, month))),
+    getDoc(doc(db, 'periodBalances', balanceDocId(vendorId, prevYear, prevMonth))),
+  ]);
+
+  let totalIn = 0;
+  let totalOut = 0;
+  periodSnap.forEach((d) => {
+    const data = d.data();
+    if (data.type === 'IN') totalIn += data.amount as number;
+    else totalOut += data.amount as number;
+  });
+
+  const finalBalance = balSnap.exists() ? (balSnap.data().balance as number) : 0;
+  const initialBalance = prevBalSnap.exists() ? (prevBalSnap.data().balance as number) : 0;
+
+  return { initialBalance, totalIn, totalOut, finalBalance };
+}

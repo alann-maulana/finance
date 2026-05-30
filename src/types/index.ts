@@ -49,3 +49,10 @@ export interface DashboardData {
   currentBalance: number;
   recentTransactions: Transaction[];
 }
+
+export interface ReportData {
+  initialBalance: number;
+  totalIn: number;
+  totalOut: number;
+  finalBalance: number;
+}
