@@ -319,7 +319,7 @@ export default function DashboardPage() {
                       <Typography variant="body2" fontWeight={600} noWrap>
                         {tx.type === 'IN' ? 'Dana Masuk' : 'Dana Keluar'}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }} noWrap>
                         {tx.note || formatDateTime(tx.createdAt)}
                       </Typography>
                       {tx.note && (
