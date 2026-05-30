@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import ThemeRegistry from '@/lib/mui/ThemeRegistry';
 import { AppProvider } from '@/lib/context/AppContext';
+import ServiceWorkerRegistration from '@/components/common/ServiceWorkerRegistration';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -18,12 +19,21 @@ export const metadata: Metadata = {
   description:
     'Aplikasi pencatatan keuangan pribadi dan usaha kecil. Catat arus kas, kelola saldo per periode, dan lihat laporan keuangan dengan mudah.',
   keywords: ['keuangan', 'pencatatan', 'kas masuk', 'kas keluar', 'laporan keuangan'],
+  appleWebApp: {
+    capable: true,
+    title: 'KasKu',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    icon: '/icons/icon-192x192.png',
+    apple: '/icons/icon-192x192.png',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0A0A15',
+  themeColor: '#7C3AED',
 };
 
 export default function RootLayout({
@@ -37,6 +47,7 @@ export default function RootLayout({
         <ThemeRegistry>
           <AppProvider>{children}</AppProvider>
         </ThemeRegistry>
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

@@ -55,6 +55,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Run on all routes except static assets
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // Run on all routes except static assets and PWA files
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|icons/.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
