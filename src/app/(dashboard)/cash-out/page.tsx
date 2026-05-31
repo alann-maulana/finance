@@ -254,10 +254,10 @@ function CashOutContent() {
     });
   }
 
-  // ── Open modal (reset form) ──────────────────────────────────────────────
+  // ── Open modal (reset form, pre-select active filter period) ────────────
   function openModal() {
-    setFormMonth(CURRENT_MONTH);
-    setFormYear(CURRENT_YEAR);
+    setFormMonth(filterMonth);
+    setFormYear(filterYear);
     setFormAmount('');
     setFormNote('');
     setFormError('');
