@@ -37,6 +37,7 @@ import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
 import {
@@ -73,6 +74,9 @@ interface TxItemProps {
 }
 
 function TxItem({ tx, isLast }: TxItemProps) {
+  const router = useRouter();
+  const [, startTxTransition] = useTransition();
+
   const initials = (tx.createdByName ?? tx.createdBy)
     .split(' ')
     .slice(0, 2)
@@ -81,8 +85,23 @@ function TxItem({ tx, isLast }: TxItemProps) {
     .toUpperCase();
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5 }}>
+    <Box
+      onClick={() => startTxTransition(() => router.push(`/cash-out/${tx.id}`))}
+      sx={{ cursor: 'pointer', '&:hover .tx-row': { background: 'rgba(248,113,113,0.04)' } }}
+    >
+      <Box
+        className="tx-row"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          py: 1.5,
+          borderRadius: 2,
+          mx: -1,
+          px: 1,
+          transition: 'background 0.15s',
+        }}
+      >
         {/* Avatar */}
         <Avatar
           sx={{
@@ -113,14 +132,17 @@ function TxItem({ tx, isLast }: TxItemProps) {
           </Typography>
         </Box>
 
-        {/* Amount */}
-        <Typography
-          variant="body2"
-          fontWeight={700}
-          sx={{ color: '#F87171', flexShrink: 0 }}
-        >
-          -{formatRupiah(tx.amount)}
-        </Typography>
+        {/* Amount + chevron */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+          <Typography
+            variant="body2"
+            fontWeight={700}
+            sx={{ color: '#F87171' }}
+          >
+            -{formatRupiah(tx.amount)}
+          </Typography>
+          <ChevronRightRoundedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+        </Box>
       </Box>
       {!isLast && <Divider sx={{ borderColor: 'rgba(248,113,113,0.08)' }} />}
     </Box>

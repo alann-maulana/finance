@@ -8,6 +8,7 @@ import {
   setDoc,
   serverTimestamp,
   runTransaction,
+  writeBatch,
   orderBy,
   limit,
   startAfter,
@@ -487,4 +488,92 @@ export async function getReportData(
   const initialBalance = prevBalSnap.exists() ? (prevBalSnap.data().balance as number) : 0;
 
   return { initialBalance, totalIn, totalOut, finalBalance };
+}
+
+// ─── Single Transaction API ───────────────────────────────────────────────────
+
+/**
+ * Fetches a single transaction document by ID.
+ */
+export async function getTransaction(
+  transactionId: string
+): Promise<Transaction | null> {
+  const snap = await getDoc(doc(db, 'transactions', transactionId));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return {
+    id: snap.id,
+    vendorId: data.vendorId,
+    type: data.type as 'IN' | 'OUT',
+    amount: data.amount as number,
+    period: data.period,
+    year: data.year,
+    month: data.month,
+    note: data.note,
+    createdBy: data.createdBy,
+    createdByName: data.createdByName ?? null,
+    createdAt: toDate(data.createdAt),
+  };
+}
+
+/**
+ * Atomically updates a cash-out transaction's amount and/or note,
+ * and adjusts the period balance by the difference.
+ *
+ * selisih = oldAmount - newAmount
+ * - If selisih > 0 (decreased): add back to balance (periodBalance += selisih)
+ * - If selisih < 0 (increased): subtract more from balance (periodBalance -= |selisih|)
+ */
+export async function updateCashOutTransaction(
+  transactionId: string,
+  vendorId: string,
+  year: number,
+  month: number,
+  oldAmount: number,
+  newAmount: number,
+  note: string
+): Promise<void> {
+  const txRef = doc(db, 'transactions', transactionId);
+  const balRef = doc(db, 'periodBalances', balanceDocId(vendorId, year, month));
+
+  await runTransaction(db, async (txn) => {
+    const balSnap = await txn.get(balRef);
+    const currentBalance = balSnap.exists() ? (balSnap.data().balance as number) : 0;
+
+    // selisih = saldo lama - saldo baru
+    const selisih = oldAmount - newAmount;
+    // selisih > 0  → amount decreased → balance goes up
+    // selisih < 0  → amount increased → balance goes down
+    const newBalance = currentBalance + selisih;
+
+    txn.set(balRef, { vendorId, year, month, balance: newBalance }, { merge: true });
+    txn.update(txRef, { amount: newAmount, note: note.trim() });
+  });
+}
+
+/**
+ * Atomically deletes a cash-out transaction document and restores the
+ * period balance (adds back the transaction amount).
+ */
+export async function deleteCashOutTransaction(
+  transactionId: string,
+  vendorId: string,
+  year: number,
+  month: number,
+  amount: number
+): Promise<void> {
+  const txRef = doc(db, 'transactions', transactionId);
+  const balRef = doc(db, 'periodBalances', balanceDocId(vendorId, year, month));
+
+  const batch = writeBatch(db);
+
+  // Read current balance first (outside batch — we need the value)
+  const balSnap = await getDoc(balRef);
+  const currentBalance = balSnap.exists() ? (balSnap.data().balance as number) : 0;
+  const newBalance = currentBalance + amount; // restore the OUT amount
+
+  batch.set(balRef, { vendorId, year, month, balance: newBalance }, { merge: true });
+  batch.delete(txRef);
+
+  await batch.commit();
 }
