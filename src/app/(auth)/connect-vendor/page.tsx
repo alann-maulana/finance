@@ -60,7 +60,10 @@ export default function ConnectVendorPage() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
 
-  if (loading) return <LoadingScreen />;
+  // Navigating state — true while awaiting getUserVerifiedStatus before redirect
+  const [navigating, setNavigating] = useState(false);
+
+  if (loading || navigating) return <LoadingScreen />;
 
   const handleLogout = async () => {
     router.replace('/login');
@@ -97,6 +100,7 @@ export default function ConnectVendorPage() {
 
   const handleGoDashboard = async () => {
     if (!user) return;
+    setNavigating(true);
     try {
       const verified = await getUserVerifiedStatus(user.uid);
       if (!verified) {

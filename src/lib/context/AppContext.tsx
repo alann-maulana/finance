@@ -64,6 +64,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Always reset to loading so downstream effects never see a partial state
+      // (e.g. user set but vendorId/isVerified not yet fetched)
+      setLoading(true);
       setUser(firebaseUser);
 
       if (firebaseUser) {
