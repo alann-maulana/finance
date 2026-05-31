@@ -273,6 +273,53 @@ export default function ProfilePage() {
         </Card>
       )}
 
+      {/* ── Tentang Aplikasi ── */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1.5 }}>
+            Tentang Aplikasi
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Versi
+              </Typography>
+              <Typography variant="caption" fontWeight={600} sx={{ fontFamily: 'monospace', color: 'primary.light' }}>
+                v1.0.4
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Platform
+              </Typography>
+              <Typography variant="caption" fontWeight={600}>
+                Progressive Web App
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Status
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box
+                  sx={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: '#22C55E',
+                    boxShadow: '0 0 6px rgba(34,197,94,0.7)',
+                  }}
+                />
+                <Typography variant="caption" fontWeight={600} sx={{ color: '#22C55E' }}>
+                  Aktif
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
       {/* ── Logout Button ── */}
       <Button
         id="logout-btn"

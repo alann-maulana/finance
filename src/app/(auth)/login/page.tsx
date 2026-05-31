@@ -202,6 +202,51 @@ export default function LoginPage() {
           </Box>{' '}
           kami.
         </Typography>
+
+        {/* App Version */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            mt: 2.5,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.75,
+              px: 1.5,
+              py: 0.5,
+              borderRadius: '20px',
+              background: 'rgba(124,58,237,0.08)',
+              border: '1px solid rgba(124,58,237,0.18)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #7C3AED, #06B6D4)',
+                boxShadow: '0 0 6px rgba(124,58,237,0.6)',
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'rgba(167,139,250,0.8)',
+                fontFamily: 'monospace',
+                fontSize: '0.65rem',
+                fontWeight: 600,
+                letterSpacing: '0.05em',
+              }}
+            >
+              v1.0.4
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
