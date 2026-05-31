@@ -246,6 +246,10 @@ function CashInContent() {
       setFormError('Jumlah harus lebih dari 0.');
       return;
     }
+    if (!formNote.trim()) {
+      setFormError('Catatan tidak boleh kosong.');
+      return;
+    }
     if (!vendorId || !user) return;
 
     setSubmitting(true);
@@ -538,7 +542,6 @@ function CashInContent() {
             id="form-amount"
             label="Jumlah (Rp)"
             fullWidth
-            size="small"
             type="number"
             value={formAmount}
             onChange={(e) => setFormAmount(e.target.value)}
@@ -559,11 +562,12 @@ function CashInContent() {
           {/* Note */}
           <TextField
             id="form-note"
-            label="Catatan (opsional)"
+            label="Catatan"
             fullWidth
             size="small"
             multiline
             rows={3}
+            required
             value={formNote}
             onChange={(e) => setFormNote(e.target.value)}
           />
