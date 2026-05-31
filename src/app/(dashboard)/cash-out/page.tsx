@@ -50,6 +50,7 @@ import type { TransactionCursor } from '@/lib/firebase/firestore';
 import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/lib/constants';
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
 import { monthLabel, parsePeriod, periodParam } from '@/lib/helpers';
+import { savePeriod, loadPeriodAsFallback } from '@/lib/periodStorage';
 
 // ─── Skeleton items ───────────────────────────────────────────────────────────
 
@@ -159,7 +160,8 @@ function CashOutContent() {
 
   // ── Period filter ────────────────────────────────────────────────────────
   const { year: filterYear, month: filterMonth } = parsePeriod(
-    searchParams.get('period')
+    searchParams.get('period'),
+    loadPeriodAsFallback() // fallback to localStorage-stored period
   );
   const period = periodParam(filterYear, filterMonth);
 
@@ -249,6 +251,7 @@ function CashOutContent() {
 
   // ── Period filter change ─────────────────────────────────────────────────
   function handleFilterChange(newYear: number, newMonth: number) {
+    savePeriod(newYear, newMonth); // persist to localStorage
     startRouterTransition(() => {
       router.push(`/cash-out?period=${periodParam(newYear, newMonth)}`);
     });

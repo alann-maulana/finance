@@ -29,6 +29,7 @@ import type { DashboardData } from '@/types';
 
 import { INDONESIAN_MONTHS } from '@/lib/constants';
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
+import { savePeriod, loadPeriod } from '@/lib/periodStorage';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -101,7 +102,17 @@ export default function DashboardPage() {
   const { user, vendorId, vendorCode, vendorName, vendorRole } = useAppContext();
   const [copied, setCopied] = useState(false);
 
-  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [selectedDate, setSelectedDate] = useState(() => {
+    // Restore last-used period from localStorage (falls back to current date).
+    // setDate(1) MUST come before setMonth to avoid JS month overflow:
+    // e.g. on the 31st, setMonth(3) = April 31 → JS rolls over to May 1.
+    const { bulan, tahun } = loadPeriod();
+    const d = new Date();
+    d.setDate(1);
+    d.setFullYear(tahun);
+    d.setMonth(bulan - 1);
+    return d;
+  });
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth() + 1;
   const periodLabel = `${INDONESIAN_MONTHS[month - 1]} ${year}`;
@@ -110,6 +121,9 @@ export default function DashboardPage() {
     setSelectedDate(prev => {
       const d = new Date(prev);
       d.setMonth(d.getMonth() - 1);
+      const newYear = d.getFullYear();
+      const newMonth = d.getMonth() + 1;
+      savePeriod(newYear, newMonth);
       return d;
     });
   };
@@ -118,6 +132,9 @@ export default function DashboardPage() {
     setSelectedDate(prev => {
       const d = new Date(prev);
       d.setMonth(d.getMonth() + 1);
+      const newYear = d.getFullYear();
+      const newMonth = d.getMonth() + 1;
+      savePeriod(newYear, newMonth);
       return d;
     });
   };

@@ -23,3 +23,11 @@
             2. Hapus document collection dana keluar
         - Tampilkan pesan data telah dihapus, dengan tombol OK
         - Action OK : kembali ke halaman daftar dana keluar
+
+# Fitur Sync Periode
+- Buatkan local storage untuk penyimpanan data periode: `bulan` dan `tahun`
+- Setiap perubahan data periode dari halaman dashboard, dana keluar dan laporan. Simpan pada local storage
+- Lakukan sync pada dropdown :
+    - Periode (`bulan` dan `tahun`) pada halaman dashboard, dana keluar dan laporan
+    - `tahun` terpilih pada halaman dana masuk
+- Jangan lakukan penyimpanan ke local storage ketika ada perubahan dropdown periode pada form dana masuk dan keluar

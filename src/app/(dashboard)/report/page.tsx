@@ -34,6 +34,7 @@ import type { ReportData } from '@/types';
 import { MONTHS, CURRENT_YEAR, YEAR_OPTIONS } from '@/lib/constants';
 import { formatRupiah } from '@/lib/formatters';
 import { monthLabel, parsePeriod, periodParam } from '@/lib/helpers';
+import { savePeriod, loadPeriodAsFallback } from '@/lib/periodStorage';
 
 // ─── Main content (needs Suspense because of useSearchParams) ─────────────────
 
@@ -45,7 +46,8 @@ function ReportContent() {
 
   // ── Period filter ────────────────────────────────────────────────────────
   const { year: filterYear, month: filterMonth } = parsePeriod(
-    searchParams.get('period')
+    searchParams.get('period'),
+    loadPeriodAsFallback() // fallback to localStorage-stored period
   );
 
   // ── Data state ───────────────────────────────────────────────────────────
@@ -74,6 +76,7 @@ function ReportContent() {
 
   // ── Period filter change ─────────────────────────────────────────────────
   function handleFilterChange(newYear: number, newMonth: number) {
+    savePeriod(newYear, newMonth); // persist to localStorage
     startRouterTransition(() => {
       router.push(`/report?period=${periodParam(newYear, newMonth)}`);
     });

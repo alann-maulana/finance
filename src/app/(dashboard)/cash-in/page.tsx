@@ -48,6 +48,7 @@ import type { TransactionCursor } from '@/lib/firebase/firestore';
 
 import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/lib/constants';
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
+import { savePeriod, loadPeriodYear } from '@/lib/periodStorage';
 
 // ─── Skeleton items ───────────────────────────────────────────────────────────
 
@@ -136,7 +137,8 @@ function CashInContent() {
 
   // ── Period filter ────────────────────────────────────────────────────────
   const urlYear = parseInt(searchParams.get('year') ?? '', 10);
-  const filterYear = !isNaN(urlYear) ? urlYear : CURRENT_YEAR;
+  // Fallback order: URL param → localStorage year → current year
+  const filterYear = !isNaN(urlYear) ? urlYear : loadPeriodYear();
 
   // ── List state ───────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -224,6 +226,8 @@ function CashInContent() {
 
   // ── Period filter change ─────────────────────────────────────────────────
   function handleFilterChange(newYear: number) {
+    // Persist only year to localStorage (cash-in filters by year only)
+    savePeriod(newYear, CURRENT_MONTH);
     startRouterTransition(() => {
       router.push(`/cash-in?year=${newYear}`);
     });
