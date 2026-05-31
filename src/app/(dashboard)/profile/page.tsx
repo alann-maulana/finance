@@ -27,6 +27,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
+import { APP_VERSION } from '@/lib/version';
 
 function InfoRow({
   icon,
@@ -286,7 +287,7 @@ export default function ProfilePage() {
                 Versi
               </Typography>
               <Typography variant="caption" fontWeight={600} sx={{ fontFamily: 'monospace', color: 'primary.light' }}>
-                v1.0.4
+                v{APP_VERSION}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

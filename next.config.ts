@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
+import { version } from "./package.json";
 
 const nextConfig: NextConfig = {
+  // Expose package.json version to client-side
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
+
   // Remove X-Powered-By header for security
   poweredByHeader: false,
 

@@ -12,6 +12,7 @@ import { signInWithGoogle } from '@/lib/firebase/auth';
 import { getUserVendor } from '@/lib/firebase/firestore';
 import { useAppContext } from '@/lib/context/AppContext';
 import GoogleSignInButton from '@/components/common/GoogleSignInButton';
+import { APP_VERSION } from '@/lib/version';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -243,7 +244,7 @@ export default function LoginPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              v1.0.4
+              v{APP_VERSION}
             </Typography>
           </Box>
         </Box>
