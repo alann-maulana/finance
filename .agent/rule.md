@@ -1,11 +1,11 @@
-# Finance Mini App - AI Agent Skill Guide (`SKILL.md`)
+# Finance Mini App - AI Agent Rules (`.agent/rule.md`)
 
 > [!NOTE]
-> This guide is a specialized "skills" index for AI agents working on the Finance Mini App. It defines core patterns, architectures, API schemas, and strict constraints that MUST be followed when coding, debugging, or adding features to this codebase.
+> This file contains the strict guidelines, constraints, schemas, and patterns for the Finance Mini App. All AI agents working on this workspace must read and comply with these rules.
 
 ---
 
-## 1. Project Stack & Environment
+## 1. Project Stack & Environment Reference
 
 Always develop, build, and maintain the application using these specific library versions and runtime environments:
 

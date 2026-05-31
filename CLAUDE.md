@@ -1,2 +1,2 @@
 @AGENTS.md
-@SKILL.md
+@.agent/rule.md
