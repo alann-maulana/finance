@@ -43,6 +43,14 @@ export interface AppUser {
   photoURL: string | null;
 }
 
+/** Represents a document in the `users` Firestore collection. */
+export interface AppUserProfile {
+  uid: string;
+  email: string;
+  name: string;
+  verified: boolean;
+}
+
 export interface DashboardData {
   totalIn: number;
   totalOut: number;

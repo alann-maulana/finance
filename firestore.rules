@@ -1,0 +1,74 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fungsi bantuan untuk mengecek apakah user sudah login
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    // ==========================================
+    // 1. Collection: vendors
+    // ==========================================
+    match /vendors/{vendorId} {
+      // Semua user yang login bisa membaca (diperlukan saat input kode unik untuk bergabung)
+      allow read: if isAuthenticated();
+      // User hanya bisa membuat vendor dengan createdBy miliknya sendiri
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if false; // Vendor tidak boleh diedit atau dihapus sembarangan
+    }
+
+    // ==========================================
+    // 2. Collection: vendorMembers
+    // ==========================================
+    match /vendorMembers/{memberId} {
+      // User bisa melihat list member
+      allow read: if isAuthenticated();
+      // User bisa membuat data join (diri sendiri)
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // History join tidak boleh diedit
+    }
+
+    // ==========================================
+    // 3. Collection: periodBalances (Master Saldo)
+    // ==========================================
+    match /periodBalances/{balanceId} {
+      // User bisa membaca dan menulis (diperlukan untuk update transaksional saldo)
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      // Catatan: Di production skala besar, Anda bisa menggunakan exists() 
+      // untuk memvalidasi apakah user merupakan bagian dari vendor tersebut.
+    }
+
+    // ==========================================
+    // 4. Collection: users (User Profile & Verified Flag)
+    // ==========================================
+    match /users/{userId} {
+      // User hanya bisa membaca dokumen miliknya sendiri
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // User bisa membuat dokumen profil dirinya sendiri (first login)
+      allow create: if isAuthenticated() && request.auth.uid == userId
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.verified == false;
+      // User bisa update email dan name, tapi TIDAK boleh mengubah field `verified`
+      // Field `verified` hanya bisa diubah melalui Firebase Console (admin)
+      allow update: if isAuthenticated() && request.auth.uid == userId
+                    && request.resource.data.verified == resource.data.verified;
+      allow delete: if false;
+    }
+
+    // ==========================================
+    // 5. Collection: transactions (Dana Masuk / Keluar)
+    // ==========================================
+    match /transactions/{transactionId} {
+      // User bisa membaca transaksi
+      allow read: if isAuthenticated();
+      // User hanya bisa membuat transaksi atas namanya sendiri (createdBy = uid)
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      // User tidak boleh menghapus/edit transaksi, atau jika boleh, hanya transaksi miliknya
+      // Di set false jika ingin immutable (tidak bisa diubah), atau sesuai di bawah:
+      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+  }
+}

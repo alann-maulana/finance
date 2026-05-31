@@ -31,3 +31,17 @@
     - Periode (`bulan` dan `tahun`) pada halaman dashboard, dana keluar dan laporan
     - `tahun` terpilih pada halaman dana masuk
 - Jangan lakukan penyimpanan ke local storage ketika ada perubahan dropdown periode pada form dana masuk dan keluar
+
+# Fitur Verified User
+- There is collection `users` with property :
+    - `uid`, the user UID from authentication
+    - `email`, email address from user
+    - `name`, fullname from user
+    - `verified`, flag boolean that indicate user is verified. Default is `false`
+- If user registered 1st time :
+    - Create 1 document using id from user UID dari authentication
+    - Store `email` and `name` along
+    - Set `verified` to `false`. It only can be changed manually via Firestore Console
+- After user login/register then create a vendor/join an already existing vendor. Check for `verified` flag :
+    - If `verified=true`, show dashboard, income, outcome, report and profile page like normally
+    - Else, show a new page indicating that user is not verified yet and show message to contact admin to manually verified them. Do not allow to access any other pages

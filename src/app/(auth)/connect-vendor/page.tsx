@@ -21,7 +21,7 @@ import IconButton from '@mui/material/IconButton';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
-import { createVendor, getVendorByCode, joinVendor } from '@/lib/firebase/firestore';
+import { createVendor, getVendorByCode, joinVendor, getUserVerifiedStatus } from '@/lib/firebase/firestore';
 import LoadingScreen from '@/components/common/LoadingScreen';
 
 interface TabPanelProps {
@@ -95,8 +95,18 @@ export default function ConnectVendorPage() {
     }
   };
 
-  const handleGoDashboard = () => {
-    router.replace('/dashboard');
+  const handleGoDashboard = async () => {
+    if (!user) return;
+    try {
+      const verified = await getUserVerifiedStatus(user.uid);
+      if (!verified) {
+        router.replace('/not-verified');
+      } else {
+        router.replace('/dashboard');
+      }
+    } catch {
+      router.replace('/dashboard');
+    }
   };
 
   // ── Join vendor ────────────────────────────────────────────────────────────
@@ -117,8 +127,13 @@ export default function ConnectVendorPage() {
         return;
       }
       await joinVendor(vendor.id, user.uid);
-      setVendorInfo(vendor.id, 'member', vendor.code, vendor.name);
-      router.replace('/dashboard');
+      const verified = await getUserVerifiedStatus(user.uid);
+      setVendorInfo(vendor.id, 'member', vendor.code, vendor.name, verified);
+      if (!verified) {
+        router.replace('/not-verified');
+      } else {
+        router.replace('/dashboard');
+      }
     } catch (err) {
       console.error(err);
       setJoinError('Gagal bergabung ke vendor. Coba lagi.');

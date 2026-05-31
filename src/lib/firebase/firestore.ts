@@ -76,6 +76,41 @@ function balanceDocId(vendorId: string, year: number, month: number): string {
   return `${vendorId}_${periodKey(year, month)}`;
 }
 
+// ─── User Profile API ────────────────────────────────────────────────────────
+
+/**
+ * Creates or updates a document in the `users` collection.
+ * Called on every login; sets `verified=false` only on first creation (merge).
+ * @param uid   Firebase Auth UID
+ * @param email User's email address
+ * @param name  User's display name
+ */
+export async function createOrUpdateUserProfile(
+  uid: string,
+  email: string,
+  name: string
+): Promise<void> {
+  const userRef = doc(db, 'users', uid);
+  // Only set verified=false if document does NOT yet exist
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) {
+    await setDoc(userRef, { uid, email, name, verified: false });
+  } else {
+    // Update mutable fields but never overwrite `verified`
+    await setDoc(userRef, { uid, email, name }, { merge: true });
+  }
+}
+
+/**
+ * Returns the `verified` flag for the given UID from the `users` collection.
+ * Returns `false` if the document doesn't exist yet.
+ */
+export async function getUserVerifiedStatus(uid: string): Promise<boolean> {
+  const snap = await getDoc(doc(db, 'users', uid));
+  if (!snap.exists()) return false;
+  return (snap.data().verified as boolean) ?? false;
+}
+
 // ─── Vendor API ──────────────────────────────────────────────────────────────
 
 /**

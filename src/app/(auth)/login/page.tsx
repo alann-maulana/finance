@@ -9,14 +9,14 @@ import Divider from '@mui/material/Divider';
 import type { Metadata } from 'next';
 
 import { signInWithGoogle } from '@/lib/firebase/auth';
-import { getUserVendor } from '@/lib/firebase/firestore';
+import { getUserVendor, createOrUpdateUserProfile, getUserVerifiedStatus } from '@/lib/firebase/firestore';
 import { useAppContext } from '@/lib/context/AppContext';
 import GoogleSignInButton from '@/components/common/GoogleSignInButton';
 import { APP_VERSION } from '@/lib/version';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading, vendorId, setVendorInfo } = useAppContext();
+  const { user, loading, vendorId, isVerified, setVendorInfo } = useAppContext();
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,23 +30,40 @@ export default function LoginPage() {
   // Already logged in — redirect
   useEffect(() => {
     if (!loading && user) {
-      if (vendorId) {
-        router.replace('/dashboard');
-      } else {
+      if (!vendorId) {
         router.replace('/connect-vendor');
+      } else if (isVerified === false) {
+        router.replace('/not-verified');
+      } else if (isVerified === true) {
+        router.replace('/dashboard');
       }
+      // isVerified === null means still loading, wait
     }
-  }, [loading, user, vendorId, router]);
+  }, [loading, user, vendorId, isVerified, router]);
 
   const handleGoogleSignIn = async () => {
     setError(null);
     setSigningIn(true);
     try {
       const firebaseUser = await signInWithGoogle();
+
+      // Upsert user profile in Firestore (sets verified=false on first login)
+      await createOrUpdateUserProfile(
+        firebaseUser.uid,
+        firebaseUser.email ?? '',
+        firebaseUser.displayName ?? ''
+      );
+
       const vendor = await getUserVendor(firebaseUser.uid);
       if (vendor) {
         setVendorInfo(vendor.vendorId, vendor.role, vendor.vendorCode, vendor.vendorName);
-        router.replace('/dashboard');
+        // Check verified status
+        const verified = await getUserVerifiedStatus(firebaseUser.uid);
+        if (!verified) {
+          router.replace('/not-verified');
+        } else {
+          router.replace('/dashboard');
+        }
       } else {
         router.replace('/connect-vendor');
       }
