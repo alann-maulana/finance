@@ -20,6 +20,13 @@ export default function LoginPage() {
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Prefetch post-login destinations eagerly so the redirect after
+  // Google Sign-In is instant with no server round-trip.
+  useEffect(() => {
+    router.prefetch('/connect-vendor');
+    router.prefetch('/dashboard');
+  }, [router]);
+
   // Already logged in — redirect
   useEffect(() => {
     if (!loading && user) {
