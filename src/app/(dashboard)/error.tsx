@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -14,8 +15,7 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service if needed
-    console.error('[Dashboard Error Boundary]:', error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (
