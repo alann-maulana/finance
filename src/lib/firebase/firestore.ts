@@ -171,7 +171,7 @@ export async function createVendor(
     createdBy: userId,
   });
 
-  const memberRef = doc(collection(db, 'vendorMembers'));
+  const memberRef = doc(db, 'vendorMembers', userId);
   await setDoc(memberRef, {
     vendorId: vendorRef.id,
     userId,
@@ -198,12 +198,64 @@ export async function joinVendor(
   const existingSnap = await getDocs(existing);
   if (!existingSnap.empty) return;
 
-  const memberRef = doc(collection(db, 'vendorMembers'));
+  const memberRef = doc(db, 'vendorMembers', userId);
   await setDoc(memberRef, {
     vendorId,
     userId,
     role: 'member',
     joinedAt: serverTimestamp(),
+  });
+}
+
+export interface VendorMemberWithUser {
+  id: string;
+  userId: string;
+  role: 'admin' | 'member';
+  joinedAt: Date | null;
+  name: string;
+  email: string;
+}
+
+/**
+ * Fetches all members of a given vendor, including their user profiles.
+ */
+export async function getVendorMembers(vendorId: string): Promise<VendorMemberWithUser[]> {
+  const membersQuery = query(collection(db, 'vendorMembers'), where('vendorId', '==', vendorId));
+  const membersSnap = await getDocs(membersQuery);
+  if (membersSnap.empty) return [];
+
+  const members: VendorMemberWithUser[] = [];
+  
+  for (const docSnap of membersSnap.docs) {
+    const data = docSnap.data();
+    const userId = data.userId;
+    let name = 'Unknown';
+    let email = '';
+    
+    // Fetch user profile
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      name = userData.name || userData.displayName || 'Unknown';
+      email = userData.email || '';
+    }
+
+    members.push({
+      id: docSnap.id,
+      userId,
+      role: data.role as 'admin' | 'member',
+      joinedAt: toDate(data.joinedAt),
+      name,
+      email,
+    });
+  }
+  
+  // Sort admins first, then by name
+  return members.sort((a, b) => {
+    if (a.role === 'admin' && b.role !== 'admin') return -1;
+    if (a.role !== 'admin' && b.role === 'admin') return 1;
+    return a.name.localeCompare(b.name);
   });
 }
 

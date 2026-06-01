@@ -25,9 +25,11 @@ import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import useSWR from 'swr';
 
 import { useAppContext } from '@/lib/context/AppContext';
 import { APP_VERSION } from '@/lib/version';
+import { getVendorMembers, type VendorMemberWithUser } from '@/lib/firebase/firestore';
 
 function InfoRow({
   icon,
@@ -74,6 +76,11 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const { data: vendorMembers = [], isLoading: loadingMembers } = useSWR<VendorMemberWithUser[]>(
+    vendorId ? ['vendorMembers', vendorId] : null,
+    ([, id]) => getVendorMembers(id as string)
+  );
 
   const displayName = user?.displayName ?? user?.email ?? 'Pengguna';
   const initials = displayName
@@ -270,6 +277,64 @@ export default function ProfilePage() {
                 </Box>
               </Box>
             </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Anggota Vendor ── */}
+      {vendorId && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1.5 }}>
+              Anggota Vendor
+            </Typography>
+
+            {loadingMembers ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {vendorMembers.map((member) => (
+                  <Box key={member.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        background: 'rgba(124,58,237,0.12)',
+                        color: 'primary.light',
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {member.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        {member.name}
+                        {member.userId === user?.uid && ' (Anda)'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {member.email}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={member.role === 'admin' ? 'Admin' : 'Member'}
+                      size="small"
+                      sx={{
+                        height: 20,
+                        fontSize: '0.65rem',
+                        background: member.role === 'admin'
+                          ? 'rgba(124,58,237,0.15)'
+                          : 'rgba(6,182,212,0.15)',
+                        color: member.role === 'admin' ? 'primary.light' : 'secondary.light',
+                        fontWeight: 600,
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            )}
           </CardContent>
         </Card>
       )}
