@@ -8,6 +8,13 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid != null;
     }
 
+    // Fungsi bantuan untuk mengecek apakah user berada di vendor yang sama
+    function isSameVendor(targetUserId) {
+      let currentUserVendorId = get(/databases/$(database)/documents/vendorMembers/$(request.auth.uid)).data.get('vendorId', null);
+      let targetUserVendorId = get(/databases/$(database)/documents/vendorMembers/$(targetUserId)).data.get('vendorId', null);
+      return currentUserVendorId != null && currentUserVendorId == targetUserVendorId && targetUserVendorId != null;
+    }
+
     // ==========================================
     // 1. Collection: vendors
     // ==========================================
@@ -45,8 +52,10 @@ service cloud.firestore {
     // 4. Collection: users (User Profile & Verified Flag)
     // ==========================================
     match /users/{userId} {
-      // User hanya bisa membaca dokumen miliknya sendiri
-      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // User hanya bisa membaca dokumen miliknya sendiri, atau member lain di vendor yang sama
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId || isSameVendor(userId)
+      );
       // User bisa membuat dokumen profil dirinya sendiri (first login)
       allow create: if isAuthenticated() && request.auth.uid == userId
                     && request.resource.data.uid == request.auth.uid
