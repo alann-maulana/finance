@@ -111,6 +111,43 @@ export async function getUserVerifiedStatus(uid: string): Promise<boolean> {
   return (snap.data().verified as boolean) ?? false;
 }
 
+/**
+ * Saves (or clears) the FCM push token for a user.
+ * Called after the browser grants notification permission.
+ */
+export async function saveFcmToken(uid: string, token: string | null): Promise<void> {
+  await setDoc(doc(db, 'users', uid), { fcmToken: token ?? null }, { merge: true });
+}
+
+/**
+ * Collects valid FCM tokens for all vendor members EXCEPT the given excludeUid.
+ * Tokens that are null/empty are filtered out.
+ */
+export async function getVendorMemberFcmTokens(
+  vendorId: string,
+  excludeUid: string
+): Promise<string[]> {
+  const membersSnap = await getDocs(
+    query(collection(db, 'vendorMembers'), where('vendorId', '==', vendorId))
+  );
+  if (membersSnap.empty) return [];
+
+  const tokens: string[] = [];
+  await Promise.all(
+    membersSnap.docs
+      .map((d) => d.data().userId as string)
+      .filter((uid) => uid !== excludeUid)
+      .map(async (uid) => {
+        const userSnap = await getDoc(doc(db, 'users', uid));
+        if (userSnap.exists()) {
+          const token = userSnap.data().fcmToken as string | undefined | null;
+          if (token) tokens.push(token);
+        }
+      })
+  );
+  return tokens;
+}
+
 // ─── Vendor API ──────────────────────────────────────────────────────────────
 
 /**

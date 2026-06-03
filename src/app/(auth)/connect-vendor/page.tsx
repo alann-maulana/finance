@@ -22,6 +22,8 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
 import { createVendor, getVendorByCode, joinVendor, getUserVerifiedStatus } from '@/lib/firebase/firestore';
+import { getVendorMemberFcmTokens } from '@/lib/firebase/firestore';
+import { sendVendorNotification } from '@/lib/firebase/messaging';
 import LoadingScreen from '@/components/common/LoadingScreen';
 
 interface TabPanelProps {
@@ -133,6 +135,20 @@ export default function ConnectVendorPage() {
       await joinVendor(vendor.id, user.uid);
       const verified = await getUserVerifiedStatus(user.uid);
       setVendorInfo(vendor.id, 'member', vendor.code, vendor.name, verified);
+
+      // ── Push notification to existing members (fire-and-forget) ───────────
+      const joinerName = user.displayName ?? user.email ?? 'Pengguna baru';
+      getVendorMemberFcmTokens(vendor.id, user.uid)
+        .then((tokens) =>
+          sendVendorNotification({
+            tokens,
+            title: 'Anggota Baru 👋',
+            body: `${joinerName} baru saja bergabung ke vendor ${vendor.name}`,
+            url: '/dashboard',
+          })
+        )
+        .catch(() => {/* ignore — notification is optional */});
+
       if (!verified) {
         router.replace('/not-verified');
       } else {

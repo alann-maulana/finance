@@ -43,6 +43,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import {
   getCashOutTransactions,
   updateBalanceForTransaction,
+  getVendorMemberFcmTokens,
 } from '@/lib/firebase/firestore';
 import type { Transaction } from '@/types';
 import type { TransactionCursor } from '@/lib/firebase/firestore';
@@ -51,6 +52,7 @@ import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
 import { monthLabel, parsePeriod, periodParam } from '@/lib/helpers';
 import { savePeriod, loadPeriodAsFallback } from '@/lib/periodStorage';
+import { sendVendorNotification } from '@/lib/firebase/messaging';
 
 // ─── Skeleton items ───────────────────────────────────────────────────────────
 
@@ -302,6 +304,20 @@ function CashOutContent() {
       ) {
         fetchFirstPage();
       }
+
+      // ── Push notification (fire-and-forget) ──────────────────────────────
+      const userName = user.displayName ?? user.email ?? 'Pengguna';
+      const periodLabel = `${String(formMonth).padStart(2, '0')}/${formYear}`;
+      getVendorMemberFcmTokens(vendorId, user.uid)
+        .then((tokens) =>
+          sendVendorNotification({
+            tokens,
+            title: 'Dana Keluar 💸',
+            body: `${userName} menginput dana keluar ${formatRupiah(amount)} periode ${periodLabel}`,
+            url: '/cash-out',
+          })
+        )
+        .catch(() => {/* ignore — notification is optional */});
     } catch (err) {
       console.error('[CashOut] submit error:', err);
       setSnack({

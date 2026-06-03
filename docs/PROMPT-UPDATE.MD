@@ -45,3 +45,9 @@
 - After user login/register then create a vendor/join an already existing vendor. Check for `verified` flag :
     - If `verified=true`, show dashboard, income, outcome, report and profile page like normally
     - Else, show a new page indicating that user is not verified yet and show message to contact admin to manually verified them. Do not allow to access any other pages
+
+# Fitur Push Notification
+Tambahkan push notification kepada sesama pengguuna di dalam vendor yang sama, ketika :
+- Pengguna menginput dana masuk
+- Pengguna menginput dana keluar
+- Pengguna baru bergabung dalam vendor

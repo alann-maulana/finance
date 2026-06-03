@@ -42,6 +42,7 @@ import { useAppContext } from '@/lib/context/AppContext';
 import {
   getCashInTransactions,
   updateBalanceForTransaction,
+  getVendorMemberFcmTokens,
 } from '@/lib/firebase/firestore';
 import type { Transaction } from '@/types';
 import type { TransactionCursor } from '@/lib/firebase/firestore';
@@ -49,6 +50,7 @@ import type { TransactionCursor } from '@/lib/firebase/firestore';
 import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/lib/constants';
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
 import { savePeriod, loadPeriodYear } from '@/lib/periodStorage';
+import { sendVendorNotification } from '@/lib/firebase/messaging';
 
 // ─── Skeleton items ───────────────────────────────────────────────────────────
 
@@ -275,6 +277,20 @@ function CashInContent() {
       if (formYear === filterYear) {
         fetchFirstPage();
       }
+
+      // ── Push notification (fire-and-forget) ──────────────────────────────
+      const userName = user.displayName ?? user.email ?? 'Pengguna';
+      const periodLabel = `${String(formMonth).padStart(2, '0')}/${formYear}`;
+      getVendorMemberFcmTokens(vendorId, user.uid)
+        .then((tokens) =>
+          sendVendorNotification({
+            tokens,
+            title: 'Dana Masuk 💰',
+            body: `${userName} menginput dana masuk ${formatRupiah(amount)} periode ${periodLabel}`,
+            url: '/cash-in',
+          })
+        )
+        .catch(() => {/* ignore — notification is optional */});
     } catch (err) {
       console.error('[CashIn] submit error:', err);
       setSnack({

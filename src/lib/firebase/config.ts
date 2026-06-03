@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getMessaging, type Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,4 +17,18 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+/**
+ * Returns the Firebase Messaging instance.
+ * Only available in the browser — returns null in SSR/Node context.
+ */
+export function getFirebaseMessaging(): Messaging | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return getMessaging(app);
+  } catch {
+    return null;
+  }
+}
+
 export default app;
