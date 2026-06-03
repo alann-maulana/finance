@@ -112,10 +112,26 @@ async function networkFirst(request) {
 }
 
 // ── Push notification handler ──
+
+/**
+ * Saves the raw push payload to Firestore via /api/log-push for debugging.
+ * Fire-and-forget — never blocks notification display.
+ */
+function logPushPayload(payload) {
+  fetch('/api/log-push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source: 'sw.js', payload }),
+  }).catch(() => {/* ignore logging failures */});
+}
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
   const payload = event.data.json();
+
+  // ── Log raw payload to Firestore for debugging ──
+  logPushPayload(payload);
 
   // Firebase (campaigns & FCM) sends: { notification: { title, body }, data: {}, fcmOptions: { link } }
   // Our /api/notify also goes through FCM which wraps in the same notification structure.

@@ -93,7 +93,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
         notification: {
           icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-192x192.png',
+          badge: '/icons/badge-monochrome.png',
           vibrate: [100, 50, 100],
         },
       },

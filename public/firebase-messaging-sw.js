@@ -20,8 +20,20 @@ self.addEventListener('message', (event) => {
 
     const messaging = firebase.messaging();
 
+    // ── Saves raw payload to Firestore for debugging ──────────────────────────
+    function logPushPayload(payload) {
+      fetch('/api/log-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: 'firebase-messaging-sw.js', payload }),
+      }).catch(() => {/* ignore logging failures */});
+    }
+
     // Handle background messages
     messaging.onBackgroundMessage((payload) => {
+      // ── Log raw payload before processing ──
+      logPushPayload(payload);
+
       // Firebase sends: { notification: { title, body }, data: {}, fcmOptions: { link } }
       // Normalize to handle both message shapes gracefully.
       const notification = payload.notification || {};
