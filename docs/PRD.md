@@ -27,6 +27,7 @@ Aplikasi ini bertujuan membantu pengguna (individu atau usaha kecil) mencatat ar
 | UI Library      | Tailwind CSS + Material UI        |
 | Autentikasi     | Firebase Auth (Google Sign-In)    |
 | Database        | Firebase Firestore                |
+| Notifikasi      | Firebase Cloud Messaging (FCM)    |
 | State & Cache   | React Context                     |
 
 > Integrasi Material UI dengan Tailwind CSS mengacu pada panduan resmi interop.
@@ -84,7 +85,14 @@ Aplikasi ini bertujuan membantu pengguna (individu atau usaha kecil) mencatat ar
      - Update harus **transaksional** (gunakan `runTransaction` di Firestore).  
    - Penentuan periode saat ini: `new Date()` => bulan, tahun.
 
-8. **Fitur Umum**  
+8. **Fitur Push Notification**
+   - Menggunakan Firebase Cloud Messaging (FCM).
+   - Pengguna menerima notifikasi push ke perangkat saat ada aktivitas di dalam vendor yang sama, seperti:
+     - Pengguna menginput dana masuk.
+     - Pengguna menginput dana keluar.
+     - Pengguna baru bergabung ke dalam vendor.
+
+9. **Fitur Umum**  
    - Mobile-first & responsif.  
    - Dark mode (mengikuti sistem atau tampilan default khusus aplikasi).  
    - Logout di halaman authenticated.
@@ -98,6 +106,7 @@ Aplikasi ini bertujuan membantu pengguna (individu atau usaha kecil) mencatat ar
 | `email`     | string    | Email user                        |
 | `name`      | string    | Nama tampilan                     |
 | `verified`  | boolean   | Status verifikasi manual admin    |
+| `fcmToken`  | string    | Token Firebase Cloud Messaging    |
 
 ### `vendors`
 | Field        | Type          | Keterangan                          |
@@ -170,3 +179,9 @@ Aplikasi telah mengimplementasikan fase-fase berikut:
 - Modal penambahan transaksi keluar (`type: 'OUT'`).
 - Update dan Delete: Fasilitas mengupdate saldo dan menghapus transaksi (khusus cash-out), dengan kompensasi pembaruan master `periodBalances` secara terintegrasi.
 - **Halaman `/report`**: Menyajikan rekapan saldo awal, dana masuk, dana keluar, dan saldo akhir pada bulan yang dipilih.
+
+### Fase 5 – Push Notification
+- Mengaktifkan Firebase Cloud Messaging (FCM) dan meminta izin browser (`Notification API`).
+- Pendaftaran token FCM dan menyimpannya di Firestore untuk tiap user.
+- Mengirim push notification ke anggota dalam satu vendor yang sama saat ada input dana masuk, dana keluar, atau anggota baru yang bergabung.
+- Service worker terdedikasi untuk menangani notifikasi push di background.
