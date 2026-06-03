@@ -22,13 +22,21 @@ self.addEventListener('message', (event) => {
 
     // Handle background messages
     messaging.onBackgroundMessage((payload) => {
-      const { title = 'KasKu', body = '', data } = payload.notification || {};
-      const url = data?.url || payload.data?.url || '/dashboard';
+      // Firebase sends: { notification: { title, body }, data: {}, fcmOptions: { link } }
+      // Normalize to handle both message shapes gracefully.
+      const notification = payload.notification || {};
+      const title = notification.title || payload.title || 'KasKu';
+      const body  = notification.body  || payload.body  || '';
+      const url   = payload.fcmOptions?.link
+                 || payload.data?.url
+                 || notification.click_action
+                 || '/dashboard';
 
       self.registration.showNotification(title, {
         body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/icon-192x192.png',
+        icon: notification.icon || '/icons/icon-192x192.png',
+        // Monochrome badge for Android status bar (white + transparent PNG)
+        badge: '/icons/badge-monochrome.png',
         vibrate: [100, 50, 100],
         data: { url },
       });

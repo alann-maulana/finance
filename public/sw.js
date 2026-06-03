@@ -113,21 +113,34 @@ async function networkFirst(request) {
 
 // ── Push notification handler ──
 self.addEventListener('push', (event) => {
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: data.icon || '/icons/icon-192x192.png',
-      badge: '/icons/icon-192x192.png',
-      vibrate: [100, 50, 100],
-      data: {
-        dateOfArrival: Date.now(),
-        url: data.url || '/dashboard',
-      },
-    };
-    event.waitUntil(self.registration.showNotification(data.title, options));
-  }
+  if (!event.data) return;
+
+  const payload = event.data.json();
+
+  // Firebase (campaigns & FCM) sends: { notification: { title, body }, data: {}, fcmOptions: { link } }
+  // Our /api/notify also goes through FCM which wraps in the same notification structure.
+  // Normalize to handle both formats gracefully.
+  const notification = payload.notification || {};
+  const title  = notification.title || payload.title || 'KasKu';
+  const body   = notification.body  || payload.body  || '';
+  const url    = payload.fcmOptions?.link
+              || payload.data?.url
+              || notification.click_action
+              || '/dashboard';
+
+  const options = {
+    body,
+    // Use the app icon as the notification icon (colored, shown in notification drawer)
+    icon: notification.icon || payload.icon || '/icons/icon-192x192.png',
+    // Monochrome badge for Android status bar (white + transparent PNG)
+    badge: '/icons/badge-monochrome.png',
+    vibrate: [100, 50, 100],
+    data: { url },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
 });
+
 
 // ── Notification click handler ──
 self.addEventListener('notificationclick', (event) => {
