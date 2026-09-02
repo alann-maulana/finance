@@ -10,6 +10,9 @@ import IconButton from '@mui/material/IconButton';
 import Fab from '@mui/material/Fab';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -36,14 +39,17 @@ import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import NotesRoundedIcon from '@mui/icons-material/NotesRounded';
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded';
+import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
 import {
   getTransaction,
   updateCashOutTransaction,
   deleteCashOutTransaction,
+  getCategories,
+  seedCategories,
 } from '@/lib/firebase/firestore';
-import type { Transaction } from '@/types';
+import type { Transaction, Category } from '@/types';
 import { formatRupiah, formatDateTime } from '@/lib/formatters';
 import { monthLabel } from '@/lib/helpers';
 
@@ -91,7 +97,7 @@ function DetailRow({ icon, label, value }: DetailRowProps) {
 export default function CashOutDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { vendorId } = useAppContext();
+  const { user, vendorId } = useAppContext();
 
   const transactionId = typeof params.id === 'string' ? params.id : '';
 
@@ -104,8 +110,13 @@ export default function CashOutDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [editAmount, setEditAmount] = useState('');
   const [editNote, setEditNote] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState<string>('');
   const [editError, setEditError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // ── Category state ───────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   // ── Delete state ─────────────────────────────────────────────────────────
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -144,12 +155,25 @@ export default function CashOutDetailPage() {
   }, [fetchTransaction]);
 
   // ── Enter edit mode ──────────────────────────────────────────────────────
-  function enterEdit() {
-    if (!transaction) return;
+  async function enterEdit() {
+    if (!transaction || !vendorId || !user) return;
     setEditAmount(String(transaction.amount));
     setEditNote(transaction.note ?? '');
+    setEditCategoryId(transaction.categoryId ?? '');
     setEditError('');
     setEditMode(true);
+
+    // Fetch (and seed if needed) categories
+    setLoadingCategories(true);
+    try {
+      await seedCategories(vendorId, user.uid);
+      const cats = await getCategories(vendorId);
+      setCategories(cats);
+    } catch (err) {
+      console.error('[CashOutDetail] category fetch error:', err);
+    } finally {
+      setLoadingCategories(false);
+    }
   }
 
   // ── Cancel edit ──────────────────────────────────────────────────────────
@@ -168,6 +192,14 @@ export default function CashOutDetailPage() {
       return;
     }
 
+    // Resolve selected category
+    const { doc: firestoreDoc } = await import('firebase/firestore');
+    const { db: firestoreDb } = await import('@/lib/firebase/config');
+    const selectedCategory = categories.find((c) => c.id === editCategoryId) ?? null;
+    const catRef = selectedCategory
+      ? firestoreDoc(firestoreDb, 'categories', selectedCategory.id)
+      : null;
+
     setSaving(true);
     setEditError('');
     try {
@@ -178,12 +210,22 @@ export default function CashOutDetailPage() {
         transaction.month,
         transaction.amount,
         newAmount,
-        editNote
+        editNote,
+        catRef,
+        selectedCategory?.name ?? null
       );
 
       // Update local state optimistically
       setTransaction((prev) =>
-        prev ? { ...prev, amount: newAmount, note: editNote } : prev
+        prev
+          ? {
+              ...prev,
+              amount: newAmount,
+              note: editNote,
+              categoryId: selectedCategory?.id ?? null,
+              categoryName: selectedCategory?.name ?? null,
+            }
+          : prev
       );
       setEditMode(false);
       setSnack({ open: true, message: 'Perubahan berhasil disimpan!', severity: 'success' });
@@ -606,6 +648,51 @@ export default function CashOutDetailPage() {
               <Typography variant="body2" fontWeight={600}>
                 {formatDateTime(transaction.createdAt)}
               </Typography>
+            }
+          />
+          <Divider sx={{ borderColor: 'rgba(248,113,113,0.08)', ml: 7 }} />
+
+          {/* Kategori */}
+          <DetailRow
+            icon={<LocalOfferRoundedIcon sx={{ fontSize: 18 }} />}
+            label="Kategori"
+            value={
+              editMode ? (
+                loadingCategories ? (
+                  <Skeleton variant="rounded" height={40} />
+                ) : (
+                  <FormControl size="small" fullWidth>
+                    <InputLabel id="edit-category-label">Kategori (opsional)</InputLabel>
+                    <Select
+                      labelId="edit-category-label"
+                      id="edit-category"
+                      value={editCategoryId}
+                      label="Kategori (opsional)"
+                      onChange={(e) => setEditCategoryId(e.target.value as string)}
+                    >
+                      <MenuItem value=""><em>— Tanpa Kategori —</em></MenuItem>
+                      {categories.map((cat) => (
+                        <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )
+              ) : transaction.categoryName ? (
+                <Chip
+                  size="small"
+                  icon={<LocalOfferRoundedIcon sx={{ fontSize: '12px !important', color: '#A78BFA !important' }} />}
+                  label={transaction.categoryName}
+                  sx={{
+                    background: 'rgba(167,139,250,0.12)',
+                    color: '#A78BFA',
+                    border: '1px solid rgba(167,139,250,0.25)',
+                    fontWeight: 600,
+                    '& .MuiChip-icon': { ml: 0.75 },
+                  }}
+                />
+              ) : (
+                <Typography variant="body2" sx={{ color: 'text.disabled' }}>—</Typography>
+              )
             }
           />
 

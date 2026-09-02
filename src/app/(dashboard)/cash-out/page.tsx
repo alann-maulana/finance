@@ -38,14 +38,17 @@ import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded';
 import PersonRoundedIcon from '@mui/icons-material/PersonRounded';
 import CallMadeRoundedIcon from '@mui/icons-material/CallMadeRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
 import {
   getCashOutTransactions,
   updateBalanceForTransaction,
   getVendorMemberFcmTokens,
+  getCategories,
+  seedCategories,
 } from '@/lib/firebase/firestore';
-import type { Transaction } from '@/types';
+import type { Transaction, Category } from '@/types';
 import type { TransactionCursor } from '@/lib/firebase/firestore';
 
 import { PAGE_SIZE, MONTHS, CURRENT_YEAR, CURRENT_MONTH, YEAR_OPTIONS } from '@/lib/constants';
@@ -122,9 +125,27 @@ function TxItem({ tx, isLast }: TxItemProps) {
 
         {/* Info */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="body2" fontWeight={600} noWrap>
-            {tx.createdByName ?? tx.createdBy}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+            <Typography variant="body2" fontWeight={600} noWrap>
+              {tx.createdByName ?? tx.createdBy}
+            </Typography>
+            {tx.categoryName && (
+              <Chip
+                size="small"
+                icon={<LocalOfferRoundedIcon sx={{ fontSize: '11px !important', color: '#A78BFA !important' }} />}
+                label={tx.categoryName}
+                sx={{
+                  height: 20,
+                  fontSize: '0.68rem',
+                  background: 'rgba(167,139,250,0.12)',
+                  color: '#A78BFA',
+                  border: '1px solid rgba(167,139,250,0.25)',
+                  '& .MuiChip-label': { pl: 0.5, pr: 0.75 },
+                  '& .MuiChip-icon': { ml: 0.5, mr: 0 },
+                }}
+              />
+            )}
+          </Box>
           {tx.note && (
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }} noWrap>
               {tx.note}
@@ -186,6 +207,11 @@ function CashOutContent() {
   const [formNote, setFormNote] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [formCategoryId, setFormCategoryId] = useState<string>('');
+
+  // ── Category state ───────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   // ── Snackbar state ───────────────────────────────────────────────────────
   const [snack, setSnack] = useState<{
@@ -260,13 +286,27 @@ function CashOutContent() {
   }
 
   // ── Open modal (reset form, pre-select active filter period) ────────────
-  function openModal() {
+  async function openModal() {
     setFormMonth(filterMonth);
     setFormYear(filterYear);
     setFormAmount('');
     setFormNote('');
     setFormError('');
+    setFormCategoryId('');
     setModalOpen(true);
+
+    // Fetch (and seed if needed) categories for this vendor
+    if (!vendorId || !user) return;
+    setLoadingCategories(true);
+    try {
+      await seedCategories(vendorId, user.uid);
+      const cats = await getCategories(vendorId);
+      setCategories(cats);
+    } catch (err) {
+      console.error('[CashOut] category fetch error:', err);
+    } finally {
+      setLoadingCategories(false);
+    }
   }
 
   // ── Submit new transaction ───────────────────────────────────────────────
@@ -282,6 +322,14 @@ function CashOutContent() {
     }
     if (!vendorId || !user) return;
 
+    // Resolve selected category
+    const { doc: firestoreDoc } = await import('firebase/firestore');
+    const { db: firestoreDb } = await import('@/lib/firebase/config');
+    const selectedCategory = categories.find((c) => c.id === formCategoryId) ?? null;
+    const catRef = selectedCategory
+      ? firestoreDoc(firestoreDb, 'categories', selectedCategory.id)
+      : null;
+
     setSubmitting(true);
     setFormError('');
     try {
@@ -293,7 +341,9 @@ function CashOutContent() {
         'OUT',
         formNote,
         user.uid,
-        user.displayName ?? user.email ?? 'Pengguna'
+        user.displayName ?? user.email ?? 'Pengguna',
+        catRef,
+        selectedCategory?.name ?? null
       );
       setModalOpen(false);
       setSnack({ open: true, message: 'Dana keluar berhasil dicatat!', severity: 'success' });
@@ -631,7 +681,29 @@ function CashOutContent() {
             required
             value={formNote}
             onChange={(e) => setFormNote(e.target.value)}
+            sx={{ mb: 2 }}
           />
+
+          {/* Category */}
+          <FormControl size="small" fullWidth>
+            <InputLabel id="form-category-label">Kategori (opsional)</InputLabel>
+            {loadingCategories ? (
+              <Skeleton variant="rounded" height={40} />
+            ) : (
+              <Select
+                labelId="form-category-label"
+                id="form-category"
+                value={formCategoryId}
+                label="Kategori (opsional)"
+                onChange={(e) => setFormCategoryId(e.target.value as string)}
+              >
+                <MenuItem value=""><em>— Tanpa Kategori —</em></MenuItem>
+                {categories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+                ))}
+              </Select>
+            )}
+          </FormControl>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>

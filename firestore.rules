@@ -15,6 +15,12 @@ service cloud.firestore {
       return currentUserVendorId != null && currentUserVendorId == targetUserVendorId && targetUserVendorId != null;
     }
 
+    // Fungsi bantuan: cek apakah user adalah member dari vendor tertentu
+    function isVendorMember(vendorId) {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/vendorMembers/$(request.auth.uid)).data.get('vendorId', null) == vendorId;
+    }
+
     // ==========================================
     // 1. Collection: vendors
     // ==========================================
@@ -75,9 +81,22 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // User hanya bisa membuat transaksi atas namanya sendiri (createdBy = uid)
       allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
-      // User tidak boleh menghapus/edit transaksi, atau jika boleh, hanya transaksi miliknya
-      // Di set false jika ingin immutable (tidak bisa diubah), atau sesuai di bawah:
-      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      // Semua member vendor yang sama bisa edit/hapus transaksi di vendor mereka
+      allow update, delete: if isVendorMember(resource.data.vendorId);
+    }
+
+    // ==========================================
+    // 6. Collection: categories (Kategori Transaksi)
+    // ==========================================
+    match /categories/{categoryId} {
+      // Semua user yang sudah login bisa membaca kategori
+      allow read: if isAuthenticated();
+      // User bisa membuat kategori untuk vendornya sendiri
+      allow create: if isAuthenticated()
+                    && request.resource.data.created_by == request.auth.uid
+                    && request.resource.data.vendorId is string;
+      // Kategori tidak bisa diedit/dihapus sembarangan (kelola via Console)
+      allow update, delete: if false;
     }
   }
 }

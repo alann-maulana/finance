@@ -18,6 +18,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
@@ -333,9 +334,27 @@ export default function DashboardPage() {
 
                     {/* Info */}
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {tx.type === 'IN' ? 'Dana Masuk' : 'Dana Keluar'}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" fontWeight={600} noWrap>
+                          {tx.type === 'IN' ? 'Dana Masuk' : 'Dana Keluar'}
+                        </Typography>
+                        {tx.type === 'OUT' && tx.categoryName && (
+                          <Chip
+                            size="small"
+                            icon={<LocalOfferRoundedIcon sx={{ fontSize: '11px !important', color: '#A78BFA !important' }} />}
+                            label={tx.categoryName}
+                            sx={{
+                              height: 20,
+                              fontSize: '0.68rem',
+                              background: 'rgba(167,139,250,0.12)',
+                              color: '#A78BFA',
+                              border: '1px solid rgba(167,139,250,0.25)',
+                              '& .MuiChip-label': { pl: 0.5, pr: 0.75 },
+                              '& .MuiChip-icon': { ml: 0.5, mr: 0 },
+                            }}
+                          />
+                        )}
+                      </Box>
                       <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }} noWrap>
                         {tx.note || formatDateTime(tx.createdAt)}
                       </Typography>

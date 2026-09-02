@@ -51,3 +51,26 @@ Tambahkan push notification kepada sesama pengguuna di dalam vendor yang sama, k
 - Pengguna menginput dana masuk
 - Pengguna menginput dana keluar
 - Pengguna baru bergabung dalam vendor
+
+# Fitur Kategori transaksi
+- Tambahkan collection baru `categories` dengan property :
+    - `name`, nama kategori transaksi
+    - `description`, deskripsi dari kategori transaksi
+    - `created_by` dan `created_at` diset otomatis
+- Tambahkan isian awal kategori :
+    - Belanja
+    - Obat
+    - Nabung
+    - Les
+    - Jajan
+    - Laundry
+    - Bensin
+    - Internet
+    - Air
+    - Kos
+- Update fitur :
+    1. Tambahkan dropdown pilihan kategori ketika tambah dan edit transaksi. Opsional
+    2. Ketika diset kategori ke transaksi, simpan sebagai tipe `reference`
+    3. Pada setiap tile di daftar pengeluaran, tampilkan nama kategorinya sebagai chip
+
+Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu

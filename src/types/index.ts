@@ -22,6 +22,15 @@ export interface PeriodBalance {
   balance: number;
 }
 
+export interface Category {
+  id: string;
+  vendorId: string;
+  name: string;
+  description: string;
+  created_by: string;
+  created_at: Date | null;
+}
+
 export interface Transaction {
   id: string;
   vendorId: string;
@@ -34,6 +43,10 @@ export interface Transaction {
   createdBy: string;
   createdByName?: string | null;
   createdAt: Date | null;
+  /** Firestore document ID of the linked category (stored as Reference on Firestore) */
+  categoryId?: string | null;
+  /** Denormalized category name for fast display without extra reads */
+  categoryName?: string | null;
 }
 
 export interface AppUser {

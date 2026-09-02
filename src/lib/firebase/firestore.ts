@@ -16,9 +16,10 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   QueryConstraint,
+  DocumentReference,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { Transaction, DashboardData, ReportData } from '@/types';
+import type { Transaction, DashboardData, ReportData, Category } from '@/types';
 
 export type TransactionCursor = QueryDocumentSnapshot<DocumentData> | null;
 
@@ -296,6 +297,67 @@ export async function getVendorMembers(vendorId: string): Promise<VendorMemberWi
   });
 }
 
+// ─── Category API ─────────────────────────────────────────────────────────────
+
+const SEED_CATEGORIES = [
+  { name: 'Belanja', description: 'Kebutuhan belanja sehari-hari' },
+  { name: 'Obat', description: 'Pembelian obat dan keperluan kesehatan' },
+  { name: 'Nabung', description: 'Tabungan rutin' },
+  { name: 'Les', description: 'Biaya les atau kursus' },
+  { name: 'Jajan', description: 'Jajan dan makanan ringan' },
+  { name: 'Laundry', description: 'Biaya laundry' },
+  { name: 'Bensin', description: 'Biaya bahan bakar kendaraan' },
+  { name: 'Internet', description: 'Tagihan internet' },
+  { name: 'Air', description: 'Tagihan air' },
+  { name: 'Kos', description: 'Biaya kos / sewa tempat tinggal' },
+];
+
+/**
+ * Fetches all categories for a given vendor, ordered by name.
+ */
+export async function getCategories(vendorId: string): Promise<Category[]> {
+  const q = query(
+    collection(db, 'categories'),
+    where('vendorId', '==', vendorId),
+    orderBy('name', 'asc')
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      vendorId: data.vendorId,
+      name: data.name as string,
+      description: data.description as string,
+      created_by: data.created_by as string,
+      created_at: toDate(data.created_at),
+    };
+  });
+}
+
+/**
+ * Seeds the 10 default categories for a vendor if none exist yet.
+ * Safe to call multiple times — no-op if categories already exist.
+ */
+export async function seedCategories(vendorId: string, createdBy: string): Promise<void> {
+  const q = query(collection(db, 'categories'), where('vendorId', '==', vendorId), limit(1));
+  const snap = await getDocs(q);
+  if (!snap.empty) return; // already seeded
+
+  const batch = writeBatch(db);
+  for (const cat of SEED_CATEGORIES) {
+    const catRef = doc(collection(db, 'categories'));
+    batch.set(catRef, {
+      vendorId,
+      name: cat.name,
+      description: cat.description,
+      created_by: createdBy,
+      created_at: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+}
+
 // ─── Period Balance API ───────────────────────────────────────────────────────
 
 /**
@@ -354,7 +416,9 @@ export async function updateBalanceForTransaction(
   type: 'IN' | 'OUT',
   note: string,
   createdBy: string,
-  createdByName?: string | null
+  createdByName?: string | null,
+  categoryRef?: DocumentReference | null,
+  categoryName?: string | null
 ): Promise<string> {
   const period = periodKey(year, month);
   const balRef = doc(db, 'periodBalances', balanceDocId(vendorId, year, month));
@@ -398,6 +462,8 @@ export async function updateBalanceForTransaction(
       createdBy,
       createdByName: createdByName ?? null,
       createdAt: serverTimestamp(),
+      categoryRef: categoryRef ?? null,
+      categoryName: categoryName ?? null,
     });
   });
 
@@ -464,6 +530,7 @@ export async function getDashboardData(
       note: data.note,
       createdBy: data.createdBy,
       createdAt: toDate(data.createdAt),
+      categoryName: data.categoryName ?? null,
     };
   });
 
@@ -563,6 +630,7 @@ export async function getCashOutTransactions(
       createdBy: data.createdBy,
       createdByName: data.createdByName ?? null,
       createdAt: toDate(data.createdAt),
+      categoryName: data.categoryName ?? null,
     };
   });
 
@@ -625,6 +693,8 @@ export async function getTransaction(
   const snap = await getDoc(doc(db, 'transactions', transactionId));
   if (!snap.exists()) return null;
   const data = snap.data();
+  // categoryRef is stored as a DocumentReference; extract its ID for the UI
+  const categoryRef = data.categoryRef as DocumentReference | null | undefined;
   return {
     id: snap.id,
     vendorId: data.vendorId,
@@ -637,6 +707,8 @@ export async function getTransaction(
     createdBy: data.createdBy,
     createdByName: data.createdByName ?? null,
     createdAt: toDate(data.createdAt),
+    categoryId: categoryRef?.id ?? data.categoryId ?? null,
+    categoryName: data.categoryName ?? null,
   };
 }
 
@@ -655,7 +727,9 @@ export async function updateCashOutTransaction(
   month: number,
   oldAmount: number,
   newAmount: number,
-  note: string
+  note: string,
+  categoryRef?: DocumentReference | null,
+  categoryName?: string | null
 ): Promise<void> {
   const txRef = doc(db, 'transactions', transactionId);
   const balRef = doc(db, 'periodBalances', balanceDocId(vendorId, year, month));
@@ -671,7 +745,12 @@ export async function updateCashOutTransaction(
     const newBalance = currentBalance + selisih;
 
     txn.set(balRef, { vendorId, year, month, balance: newBalance }, { merge: true });
-    txn.update(txRef, { amount: newAmount, note: note.trim() });
+    txn.update(txRef, {
+      amount: newAmount,
+      note: note.trim(),
+      categoryRef: categoryRef ?? null,
+      categoryName: categoryName ?? null,
+    });
   });
 }
 
