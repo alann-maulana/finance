@@ -71,9 +71,16 @@ export interface DashboardData {
   recentTransactions: Transaction[];
 }
 
+export interface CategorySpending {
+  categoryName: string;
+  total: number;
+}
+
 export interface ReportData {
   initialBalance: number;
   totalIn: number;
   totalOut: number;
   finalBalance: number;
+  /** OUT transactions grouped by category, sorted highest → lowest */
+  categoryBreakdown: CategorySpending[];
 }

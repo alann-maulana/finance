@@ -74,3 +74,9 @@ Tambahkan push notification kepada sesama pengguuna di dalam vendor yang sama, k
     3. Pada setiap tile di daftar pengeluaran, tampilkan nama kategorinya sebagai chip
 
 Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
+
+# Fitur Laporan per Kategori
+- Setelah 4 card utama ringkasan tiap bulan-tahun, tambahkan card total pengeluaran tiap masing-masing kategori
+- Tampilan card pengeluaran per kategori, urutkan dari total terbanyak ke paling sedikit
+
+Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu

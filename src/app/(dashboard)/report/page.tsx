@@ -26,15 +26,99 @@ import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceW
 import SavingsRoundedIcon from '@mui/icons-material/SavingsRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
+import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 
 import { useAppContext } from '@/lib/context/AppContext';
 import { getReportData } from '@/lib/firebase/firestore';
-import type { ReportData } from '@/types';
+import type { ReportData, CategorySpending } from '@/types';
 
 import { MONTHS, CURRENT_YEAR, YEAR_OPTIONS } from '@/lib/constants';
 import { formatRupiah } from '@/lib/formatters';
 import { monthLabel, parsePeriod, periodParam } from '@/lib/helpers';
 import { savePeriod, loadPeriodAsFallback } from '@/lib/periodStorage';
+
+// ─── SummaryCard (module-level to avoid React remount on re-render) ───────────
+
+function SummaryCard({
+  title,
+  amount,
+  color,
+  icon,
+  bgColor,
+}: {
+  title: string;
+  amount: number;
+  color: string;
+  icon: React.ReactNode;
+  bgColor: string;
+}) {
+  return (
+    <Card sx={{ height: '100%', borderRadius: 3, border: `1px solid ${bgColor}`, background: '#13131F' }}>
+      <CardContent sx={{ p: 2.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              {title}
+            </Typography>
+            <Typography variant="h6" fontWeight={700} sx={{ mt: 1, color }}>
+              {color === '#F87171' ? '-' : ''}{formatRupiah(amount)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              background: bgColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color,
+            }}
+          >
+            {icon}
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── CategorySpendingCard (module-level) ──────────────────────────────────────
+
+function CategorySpendingCard({ categoryName, total }: { categoryName: string; total: number }) {
+  return (
+    <Card sx={{ borderRadius: 3, border: '1px solid rgba(248,113,113,0.15)', background: '#13131F' }}>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: 2,
+                background: 'rgba(248,113,113,0.10)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#F87171',
+                flexShrink: 0,
+              }}
+            >
+              <LocalOfferRoundedIcon sx={{ fontSize: 18 }} />
+            </Box>
+            <Typography variant="body2" fontWeight={600} sx={{ color: 'text.primary' }}>
+              {categoryName}
+            </Typography>
+          </Box>
+          <Typography variant="body2" fontWeight={700} sx={{ color: '#F87171', ml: 1, whiteSpace: 'nowrap' }}>
+            -{formatRupiah(total)}
+          </Typography>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
 
 // ─── Main content (needs Suspense because of useSearchParams) ─────────────────
 
@@ -83,48 +167,7 @@ function ReportContent() {
   }
 
   // ── Render Helpers ───────────────────────────────────────────────────────
-  const SummaryCard = ({
-    title,
-    amount,
-    color,
-    icon,
-    bgColor,
-  }: {
-    title: string;
-    amount: number;
-    color: string;
-    icon: React.ReactNode;
-    bgColor: string;
-  }) => (
-    <Card sx={{ height: '100%', borderRadius: 3, border: `1px solid ${bgColor}`, background: '#13131F' }}>
-      <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <Box>
-            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-              {title}
-            </Typography>
-            <Typography variant="h6" fontWeight={700} sx={{ mt: 1, color }}>
-              {color === '#F87171' ? '-' : ''}{formatRupiah(amount)}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
-              background: bgColor,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color,
-            }}
-          >
-            {icon}
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
-  );
+  // (SummaryCard and CategorySpendingCard are declared at module scope)
 
   return (
     <Box sx={{ px: { xs: 2, sm: 3 }, py: 3, maxWidth: 800, mx: 'auto', pb: '80px' }}>
@@ -221,6 +264,7 @@ function ReportContent() {
             />
           </Box>
 
+          {/* ── 4 Main Summary Cards ── */}
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <SummaryCard
@@ -259,6 +303,27 @@ function ReportContent() {
               />
             </Grid>
           </Grid>
+
+          {/* ── Pengeluaran per Kategori ── */}
+          {report.categoryBreakdown.length > 0 && (
+            <Box sx={{ mt: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <LocalOfferRoundedIcon sx={{ fontSize: 18, color: '#F87171' }} />
+                <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', color: 'text.secondary' }}>
+                  Pengeluaran per Kategori
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {report.categoryBreakdown.map((item) => (
+                  <CategorySpendingCard
+                    key={item.categoryName}
+                    categoryName={item.categoryName}
+                    total={item.total}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
         </Box>
       )}
 

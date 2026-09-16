@@ -19,7 +19,7 @@ import {
   DocumentReference,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { Transaction, DashboardData, ReportData, Category } from '@/types';
+import type { Transaction, DashboardData, ReportData, Category, CategorySpending } from '@/types';
 
 export type TransactionCursor = QueryDocumentSnapshot<DocumentData> | null;
 
@@ -670,16 +670,29 @@ export async function getReportData(
 
   let totalIn = 0;
   let totalOut = 0;
+  const categoryMap = new Map<string, number>();
+
   periodSnap.forEach((d) => {
     const data = d.data();
-    if (data.type === 'IN') totalIn += data.amount as number;
-    else totalOut += data.amount as number;
+    if (data.type === 'IN') {
+      totalIn += data.amount as number;
+    } else {
+      totalOut += data.amount as number;
+      // Group OUT transactions by category name
+      const catName = (data.categoryName as string | null | undefined) || 'Tanpa Kategori';
+      categoryMap.set(catName, (categoryMap.get(catName) ?? 0) + (data.amount as number));
+    }
   });
+
+  // Sort categories highest → lowest
+  const categoryBreakdown: CategorySpending[] = Array.from(categoryMap.entries())
+    .map(([categoryName, total]) => ({ categoryName, total }))
+    .sort((a, b) => b.total - a.total);
 
   const finalBalance = balSnap.exists() ? (balSnap.data().balance as number) : 0;
   const initialBalance = prevBalSnap.exists() ? (prevBalSnap.data().balance as number) : 0;
 
-  return { initialBalance, totalIn, totalOut, finalBalance };
+  return { initialBalance, totalIn, totalOut, finalBalance, categoryBreakdown };
 }
 
 // ─── Single Transaction API ───────────────────────────────────────────────────
