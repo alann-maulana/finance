@@ -56,9 +56,12 @@ export default function LoginPage() {
 
       const vendor = await getUserVendor(firebaseUser.uid);
       if (vendor) {
-        setVendorInfo(vendor.vendorId, vendor.role, vendor.vendorCode, vendor.vendorName);
-        // Check verified status
+        // Check verified status before setting vendor info so isVerified is
+        // set atomically together with vendorId — DashboardLayout renders a
+        // LoadingScreen whenever isVerified === null, so we must supply it
+        // eagerly to avoid the screen getting stuck.
         const verified = await getUserVerifiedStatus(firebaseUser.uid);
+        setVendorInfo(vendor.vendorId, vendor.role, vendor.vendorCode, vendor.vendorName, verified);
         if (!verified) {
           router.replace('/not-verified');
         } else {
