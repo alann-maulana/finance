@@ -16,6 +16,8 @@ import Chip from '@mui/material/Chip';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
 import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+
 
 import { useAppContext } from '@/lib/context/AppContext';
 import { getOutTransactionsByPeriod } from '@/lib/firebase/firestore';
@@ -52,7 +54,7 @@ function groupByCategory(txs: Transaction[]): { name: string; transactions: Tran
 
 // ─── Transaction Row ──────────────────────────────────────────────────────────
 
-function TransactionRow({ tx }: { tx: Transaction }) {
+function TransactionRow({ tx, onNavigate }: { tx: Transaction; onNavigate: () => void }) {
   const date = tx.createdAt
     ? tx.createdAt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
@@ -61,7 +63,22 @@ function TransactionRow({ tx }: { tx: Transaction }) {
     : '';
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, py: 1.5 }}>
+    <Box
+      onClick={onNavigate}
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 1.5,
+        py: 1.5,
+        cursor: 'pointer',
+        borderRadius: 2,
+        mx: -1,
+        px: 1,
+        transition: 'background 0.15s',
+        '&:hover': { background: 'rgba(124,58,237,0.06)' },
+        '&:active': { background: 'rgba(124,58,237,0.12)' },
+      }}
+    >
       <Box
         sx={{
           width: 36,
@@ -92,9 +109,12 @@ function TransactionRow({ tx }: { tx: Transaction }) {
           {date}{time ? ` · ${time}` : ''}{tx.createdByName ? ` · ${tx.createdByName}` : ''}
         </Typography>
       </Box>
+
+      <ChevronRightRoundedIcon sx={{ fontSize: 18, color: 'text.disabled', flexShrink: 0, mt: 0.5 }} />
     </Box>
   );
 }
+
 
 // ─── Main Content ─────────────────────────────────────────────────────────────
 
@@ -293,7 +313,11 @@ function CategoriesContent() {
                   </Box>
                   {activeGroup.transactions.map((tx, idx) => (
                     <Box key={tx.id}>
-                      <TransactionRow tx={tx} />
+                      <TransactionRow
+                        tx={tx}
+                        onNavigate={() => router.push(`/cash-out/${tx.id}`)}
+                      />
+
                       {idx < activeGroup.transactions.length - 1 && (
                         <Divider sx={{ borderColor: 'rgba(124,58,237,0.08)' }} />
                       )}
