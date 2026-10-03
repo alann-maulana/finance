@@ -136,16 +136,22 @@ function CategoriesContent() {
   const groups = useMemo(() => groupByCategory(transactions), [transactions]);
 
   // ── Tab state ─────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<string>('');
+  // manualTab: set when the user explicitly clicks a tab (null = not yet chosen)
+  const [manualTab, setManualTab] = useState<string | null>(null);
 
-  // Once data loads, pick the initial tab from query param or first group
-  useEffect(() => {
-    if (groups.length === 0) return;
-    const match = groups.find((g) => g.name === initialTab);
-    setActiveTab(match ? match.name : groups[0].name);
-  }, [groups, initialTab]);
+  // Derived active tab — always a valid value, no useEffect race:
+  // 1. If user clicked a tab and it still exists in groups → use it
+  // 2. Else if the query-param tab exists in groups → use it
+  // 3. Else → use the first group
+  const activeTab = useMemo(() => {
+    if (groups.length === 0) return '';
+    if (manualTab && groups.find((g) => g.name === manualTab)) return manualTab;
+    const fromParam = groups.find((g) => g.name === decodeURIComponent(initialTab));
+    return fromParam ? fromParam.name : groups[0].name;
+  }, [groups, manualTab, initialTab]);
 
   const activeGroup = groups.find((g) => g.name === activeTab);
+
 
   // ── Back URL ──────────────────────────────────────────────────────────────
   const backUrl = `/report?period=${period}`;
@@ -220,7 +226,7 @@ function CategoriesContent() {
           >
             <Tabs
               value={activeTab}
-              onChange={(_, val: string) => setActiveTab(val)}
+              onChange={(_, val: string) => setManualTab(val)}
               variant="scrollable"
               scrollButtons="auto"
               allowScrollButtonsMobile
