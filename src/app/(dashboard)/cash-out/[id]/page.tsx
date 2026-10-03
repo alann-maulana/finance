@@ -319,7 +319,8 @@ export default function CashOutDetailPage() {
         <Button
           variant="outlined"
           startIcon={<ArrowBackRoundedIcon />}
-          onClick={() => router.push('/cash-out')}
+          onClick={() => router.back()}
+
           sx={{ borderColor: 'rgba(248,113,113,0.4)', color: '#F87171', mt: 1 }}
         >
           Kembali ke Daftar
@@ -379,7 +380,8 @@ export default function CashOutDetailPage() {
         <Button
           id="btn-deleted-ok"
           variant="contained"
-          onClick={() => router.push('/cash-out')}
+          onClick={() => router.back()}
+
           sx={{
             mt: 1,
             background: 'linear-gradient(135deg, #DC2626, #EF4444)',
@@ -427,7 +429,8 @@ export default function CashOutDetailPage() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <IconButton
             id="btn-back-cash-out-detail"
-            onClick={() => router.push('/cash-out')}
+            onClick={() => router.back()}
+
             size="small"
             sx={{
               background: 'rgba(248,113,113,0.10)',
