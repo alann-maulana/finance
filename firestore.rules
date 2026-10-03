@@ -21,6 +21,15 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/vendorMembers/$(request.auth.uid)).data.get('vendorId', null) == vendorId;
     }
 
+    // Fungsi bantuan: cek apakah user adalah admin dari vendor tertentu
+    function isVendorAdmin(vendorId) {
+      let memberData = get(/databases/$(database)/documents/vendorMembers/$(request.auth.uid)).data;
+      return isAuthenticated()
+        && memberData.get('vendorId', null) == vendorId
+        && memberData.get('role', null) == 'admin';
+    }
+
+
     // ==========================================
     // 1. Collection: vendors
     // ==========================================
@@ -91,12 +100,14 @@ service cloud.firestore {
     match /categories/{categoryId} {
       // Semua user yang sudah login bisa membaca kategori
       allow read: if isAuthenticated();
-      // User bisa membuat kategori untuk vendornya sendiri
+      // Hanya admin vendor yang bisa membuat kategori baru
       allow create: if isAuthenticated()
                     && request.resource.data.created_by == request.auth.uid
-                    && request.resource.data.vendorId is string;
-      // Kategori tidak bisa diedit/dihapus sembarangan (kelola via Console)
-      allow update, delete: if false;
+                    && isVendorAdmin(request.resource.data.vendorId);
+      // Hanya admin vendor yang bisa mengupdate kategori (nama/deskripsi)
+      allow update: if isVendorAdmin(resource.data.vendorId);
+      allow delete: if false;
     }
+
   }
 }

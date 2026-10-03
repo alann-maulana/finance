@@ -25,7 +25,10 @@ import VpnKeyRoundedIcon from '@mui/icons-material/VpnKeyRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import useSWR from 'swr';
+
 
 import { useAppContext } from '@/lib/context/AppContext';
 import { APP_VERSION } from '@/lib/version';
@@ -339,8 +342,48 @@ export default function ProfilePage() {
         </Card>
       )}
 
+      {/* ── Manajemen Kategori (admin only) ── */}
+      {vendorId && vendorRole === 'admin' && (
+        <Card
+          sx={{ mb: 3, cursor: 'pointer', '&:hover': { borderColor: 'rgba(124,58,237,0.4)' } }}
+          onClick={() => router.push('/profile/categories')}
+          role="button"
+          aria-label="Manajemen Kategori"
+        >
+          <CardContent sx={{ py: '12px !important' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  background: 'rgba(124,58,237,0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'primary.light',
+                  flexShrink: 0,
+                }}
+              >
+                <CategoryRoundedIcon sx={{ fontSize: 18 }} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Manajemen Kategori
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Tambah atau ubah kategori transaksi
+                </Typography>
+              </Box>
+              <ChevronRightRoundedIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Tentang Aplikasi ── */}
       <Card sx={{ mb: 3 }}>
+
         <CardContent>
           <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1.5 }}>
             Tentang Aplikasi

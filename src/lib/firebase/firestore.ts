@@ -793,3 +793,84 @@ export async function deleteCashOutTransaction(
 
   await batch.commit();
 }
+
+// ─── Category CRUD ────────────────────────────────────────────────────────────
+
+/**
+ * Creates a new category document in the `categories` collection.
+ * Returns the new category ID.
+ */
+export async function createCategory(
+  vendorId: string,
+  name: string,
+  description: string,
+  createdBy: string
+): Promise<string> {
+  const catRef = doc(collection(db, 'categories'));
+  await setDoc(catRef, {
+    vendorId,
+    name: name.trim(),
+    description: description.trim(),
+    created_by: createdBy,
+    created_at: serverTimestamp(),
+  });
+  return catRef.id;
+}
+
+/**
+ * Updates a category's name and description.
+ *
+ * If the name changed, also propagates the new name to the denormalized
+ * `categoryName` field on every OUT transaction that references this category.
+ * Uses batched writes, splitting into chunks of 500 to respect Firestore limits.
+ *
+ * @returns The number of transactions updated.
+ */
+export async function updateCategory(
+  categoryId: string,
+  vendorId: string,
+  newName: string,
+  newDescription: string,
+  oldName: string
+): Promise<number> {
+  const catRef = doc(db, 'categories', categoryId);
+
+  // Update the category document itself
+  await setDoc(
+    catRef,
+    { name: newName.trim(), description: newDescription.trim() },
+    { merge: true }
+  );
+
+  // If name didn't change, no propagation needed
+  if (newName.trim() === oldName.trim()) return 0;
+
+  // Find all transactions referencing this category
+  const txSnap = await getDocs(
+    query(
+      collection(db, 'transactions'),
+      where('vendorId', '==', vendorId),
+      where('categoryRef', '==', catRef)
+    )
+  );
+
+  if (txSnap.empty) return 0;
+
+  // Split into chunks of 500 (Firestore batch limit)
+  const CHUNK = 500;
+  const docs = txSnap.docs;
+  let updated = 0;
+
+  for (let i = 0; i < docs.length; i += CHUNK) {
+    const chunk = docs.slice(i, i + CHUNK);
+    const batch = writeBatch(db);
+    for (const d of chunk) {
+      batch.update(d.ref, { categoryName: newName.trim() });
+    }
+    await batch.commit();
+    updated += chunk.length;
+  }
+
+  return updated;
+}
+

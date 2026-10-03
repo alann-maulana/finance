@@ -36,13 +36,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
-        // Leave room for fixed bottom navbar
-        pb: '64px',
+        height: '100dvh',
         background: 'linear-gradient(180deg, #0A0A15 0%, #0D0D20 100%)',
+        overflow: 'hidden',
       }}
     >
-      <Box component="main" sx={{ flex: 1 }}>
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          // Leave room for fixed bottom navbar
+          pb: '64px',
+        }}
+      >
         {children}
       </Box>
       <Navbar />

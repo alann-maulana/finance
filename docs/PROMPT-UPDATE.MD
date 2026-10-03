@@ -80,3 +80,10 @@ Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
 - Tampilan card pengeluaran per kategori, urutkan dari total terbanyak ke paling sedikit
 
 Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
+
+# Fitur Manajemen Kategori
+- Buatkan menu manajemen kategori di tab profile
+- Tambahkan fitur Create dan Update untuk kategori
+- Buatkan flow untuk ketika nama kategori berubah, maka kategori yang tersimpan di transaksi keluar juga disesuaikan
+
+Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
