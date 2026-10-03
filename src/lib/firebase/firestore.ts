@@ -645,6 +645,44 @@ export async function getCashOutTransactions(
 }
 
 /**
+ * Fetches ALL OUT transactions for a vendor + period (no pagination).
+ * Used for client-side grouping by category on the category-breakdown page.
+ * Results are ordered by createdAt descending.
+ */
+export async function getOutTransactionsByPeriod(
+  vendorId: string,
+  period: string
+): Promise<Transaction[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'transactions'),
+      where('vendorId', '==', vendorId),
+      where('type', '==', 'OUT'),
+      where('period', '==', period),
+      orderBy('createdAt', 'desc')
+    )
+  );
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      vendorId: data.vendorId,
+      type: 'OUT' as const,
+      amount: data.amount as number,
+      period: data.period,
+      year: data.year,
+      month: data.month,
+      note: data.note,
+      createdBy: data.createdBy,
+      createdByName: data.createdByName ?? null,
+      createdAt: toDate(data.createdAt),
+      categoryName: data.categoryName ?? null,
+    };
+  });
+}
+
+
+/**
  * Fetches report data for a specific vendor and period.
  */
 export async function getReportData(
@@ -652,6 +690,7 @@ export async function getReportData(
   year: number,
   month: number
 ): Promise<ReportData> {
+
   const period = periodKey(year, month);
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevYear = month === 1 ? year - 1 : year;

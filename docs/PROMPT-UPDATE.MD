@@ -87,3 +87,10 @@ Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
 - Buatkan flow untuk ketika nama kategori berubah, maka kategori yang tersimpan di transaksi keluar juga disesuaikan
 
 Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
+
+# Daftar Pengeluaran per Kategori
+- Buatkan 1 halaman untuk menampilkan semua kategori dalam tab bar terpisah
+- Setiap tab barnya, tampilkan daftar pengeluaran sesuai dengan kategori masing
+- Trigger untuk menampilkan halaman tersebut adalah ketika click salah 1 kategori yang ada di tab Laporan > Pengeluaran per Kategori
+
+Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu

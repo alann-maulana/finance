@@ -27,6 +27,8 @@ import SavingsRoundedIcon from '@mui/icons-material/SavingsRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import LocalOfferRoundedIcon from '@mui/icons-material/LocalOfferRounded';
+import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+
 
 import { useAppContext } from '@/lib/context/AppContext';
 import { getReportData } from '@/lib/firebase/firestore';
@@ -86,9 +88,27 @@ function SummaryCard({
 
 // ─── CategorySpendingCard (module-level) ──────────────────────────────────────
 
-function CategorySpendingCard({ categoryName, total }: { categoryName: string; total: number }) {
+function CategorySpendingCard({
+  categoryName,
+  total,
+  onClick,
+}: {
+  categoryName: string;
+  total: number;
+  onClick?: () => void;
+}) {
   return (
-    <Card sx={{ borderRadius: 3, border: '1px solid rgba(248,113,113,0.15)', background: '#13131F' }}>
+    <Card
+      onClick={onClick}
+      sx={{
+        borderRadius: 3,
+        border: '1px solid rgba(248,113,113,0.15)',
+        background: '#13131F',
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'border-color 0.15s',
+        '&:hover': onClick ? { borderColor: 'rgba(248,113,113,0.4)' } : {},
+      }}
+    >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -111,14 +131,18 @@ function CategorySpendingCard({ categoryName, total }: { categoryName: string; t
               {categoryName}
             </Typography>
           </Box>
-          <Typography variant="body2" fontWeight={700} sx={{ color: '#F87171', ml: 1, whiteSpace: 'nowrap' }}>
-            -{formatRupiah(total)}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="body2" fontWeight={700} sx={{ color: '#F87171', whiteSpace: 'nowrap' }}>
+              -{formatRupiah(total)}
+            </Typography>
+            {onClick && <ChevronRightRoundedIcon sx={{ color: 'text.disabled', fontSize: 18, flexShrink: 0 }} />}
+          </Box>
         </Box>
       </CardContent>
     </Card>
   );
 }
+
 
 // ─── Main content (needs Suspense because of useSearchParams) ─────────────────
 
@@ -319,9 +343,15 @@ function ReportContent() {
                     key={item.categoryName}
                     categoryName={item.categoryName}
                     total={item.total}
+                    onClick={() =>
+                      router.push(
+                        `/report/categories?period=${periodParam(filterYear, filterMonth)}&tab=${encodeURIComponent(item.categoryName)}`
+                      )
+                    }
                   />
                 ))}
               </Box>
+
             </Box>
           )}
         </Box>
