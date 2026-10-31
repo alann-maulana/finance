@@ -84,3 +84,48 @@ export interface ReportData {
   /** OUT transactions grouped by category, sorted highest → lowest */
   categoryBreakdown: CategorySpending[];
 }
+
+// ─── Balance Adjustment ───────────────────────────────────────────────────────
+
+/** One funding source entry inside a balance adjustment */
+export interface AdjustmentItem {
+  /** Row number (1-based), auto-generated on display */
+  no: number;
+  /** Name of the funding source, e.g. "Rekening BCA" */
+  sourceName: string;
+  /** Balance amount for this source */
+  amount: number;
+}
+
+/**
+ * Represents one document in the `balanceAdjustments` Firestore collection.
+ * status:
+ *   - "draft"     = saved items only, no OUT transaction created yet
+ *   - "submitted" = draft + OUT transaction committed to balance
+ */
+export interface BalanceAdjustment {
+  id: string;
+  vendorId: string;
+  /** Funding source rows */
+  items: Omit<AdjustmentItem, 'no'>[];
+  /** Sum of all items[].amount */
+  totalSources: number;
+  /** The period balance (saldo akhir kas) at the time of submission */
+  balanceAtSubmit: number | null;
+  /**
+   * Selisih = balanceAtSubmit - totalSources
+   * Positive → added as OUT transaction (balance was over the sources total)
+   * Negative → would add IN transaction, but for now we create OUT with abs value
+   */
+  selisih: number | null;
+  /** Firestore ID of the OUT transaction created on submit (null if draft) */
+  transactionId: string | null;
+  status: 'draft' | 'submitted';
+  /** year and month of the period used when submitting */
+  year: number | null;
+  month: number | null;
+  createdBy: string;
+  createdByName: string | null;
+  createdAt: Date | null;
+  submittedAt: Date | null;
+}

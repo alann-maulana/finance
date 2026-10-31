@@ -27,6 +27,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import CategoryRoundedIcon from '@mui/icons-material/CategoryRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded';
 import useSWR from 'swr';
 
 
@@ -373,6 +374,45 @@ export default function ProfilePage() {
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Tambah atau ubah kategori transaksi
+                </Typography>
+              </Box>
+              <ChevronRightRoundedIcon sx={{ color: 'text.disabled', fontSize: 20 }} />
+            </Box>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Penyesuaian Saldo ── */}
+      {vendorId && (
+        <Card
+          sx={{ mb: 3, cursor: 'pointer', '&:hover': { borderColor: 'rgba(139,92,246,0.4)' } }}
+          onClick={() => router.push('/balance-adjustment')}
+          role="button"
+          aria-label="Penyesuaian Saldo"
+        >
+          <CardContent sx={{ py: '12px !important' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  background: 'rgba(139,92,246,0.12)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#A78BFA',
+                  flexShrink: 0,
+                }}
+              >
+                <AccountBalanceWalletRoundedIcon sx={{ fontSize: 18 }} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Typography variant="body2" fontWeight={600}>
+                  Penyesuaian Saldo
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Rekonsiliasi saldo kas dengan sumber dana
                 </Typography>
               </Box>
               <ChevronRightRoundedIcon sx={{ color: 'text.disabled', fontSize: 20 }} />

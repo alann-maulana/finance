@@ -94,3 +94,25 @@ Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
 - Trigger untuk menampilkan halaman tersebut adalah ketika click salah 1 kategori yang ada di tab Laporan > Pengeluaran per Kategori
 
 Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu
+
+# Modul Penyesuaian Saldo
+Modul ini intinya adalah : 
+- Ketika add new penyesuaian saldo, maka semua user di dalam vendor bisa menambahkan sumber dana dan saldonya berapa
+- Misalnya: rekening bca | 5.000.000, shopee pay | 300.000
+- Jadi ketika sisa saldo akhir di kasku 5.500.000
+- Maka ketika disimpan, akan menambahkan 200.000 [dari perhitungan 5.500.000 - (5.000.000 + 300.000)] sebagai pengeluaran baru dengan deskripsi Penyesuaian Saldo 31 Oct 2026
+- Akhirnya sisa saldo akhir akan match dengan yang ada di total semua sumber dana
+
+Todo :
+- Buatkan 1 halaman untuk menampilkan semua data penyesuaian saldo
+- Tambahkan floating action button untuk add new penyesuaian saldo
+- Di dalam formnya terdapat: 
+    - List dengan kolom # | Sumber Dana | Saldo
+    - Setiap row data: # otomatis menampilkan urutan nomor start 1, Sumber dana berupa textfield, Saldo berupa textfield number dan align right
+    - Di bagian bawah terdapat :
+        - Kiri: total saldo dari semua sumber dana
+        - Rata kanan: Simpan Draft, Simpan
+    - Simpan draft hanya menyimpan data sumber dana dan saldo ke collection saja
+    - Simpan = Simpan draft + submit 1 data pengeluaran
+
+Jika ada yang kurang jelas silakan tanya dan tampilkan juga asumsi awalmu

@@ -19,7 +19,7 @@ import {
   DocumentReference,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { Transaction, DashboardData, ReportData, Category, CategorySpending } from '@/types';
+import type { Transaction, DashboardData, ReportData, Category, CategorySpending, BalanceAdjustment } from '@/types';
 
 export type TransactionCursor = QueryDocumentSnapshot<DocumentData> | null;
 
@@ -913,3 +913,190 @@ export async function updateCategory(
   return updated;
 }
 
+
+// ─── Balance Adjustment API ────────────────────────────────────────────────────
+
+export interface AdjustmentItemInput {
+  sourceName: string;
+  amount: number;
+}
+
+/**
+ * Creates a new balance adjustment document in "draft" status.
+ * No transaction is created; only the source items are persisted.
+ */
+export async function createAdjustmentDraft(
+  vendorId: string,
+  items: AdjustmentItemInput[],
+  createdBy: string,
+  createdByName: string | null
+): Promise<string> {
+  const totalSources = items.reduce((sum, it) => sum + it.amount, 0);
+  const adjRef = doc(collection(db, 'balanceAdjustments'));
+
+  await setDoc(adjRef, {
+    vendorId,
+    items,
+    totalSources,
+    balanceAtSubmit: null,
+    selisih: null,
+    transactionId: null,
+    status: 'draft',
+    year: null,
+    month: null,
+    createdBy,
+    createdByName: createdByName ?? null,
+    createdAt: serverTimestamp(),
+    submittedAt: null,
+  });
+
+  return adjRef.id;
+}
+
+/**
+ * Submits a balance adjustment draft:
+ * 1. Reads the current period balance.
+ * 2. Computes selisih = currentBalance - totalSources.
+ * 3. If selisih != 0, creates an OUT transaction (or IN if selisih < 0)
+ *    with note "Penyesuaian Saldo <DD Mon YYYY>".
+ * 4. Updates the adjustment document to status="submitted".
+ *
+ * Uses a Firestore transaction to keep balance + transaction atomic.
+ */
+export async function submitAdjustment(
+  adjustmentId: string,
+  vendorId: string,
+  year: number,
+  month: number,
+  items: AdjustmentItemInput[],
+  createdBy: string,
+  createdByName: string | null
+): Promise<{ transactionId: string | null; selisih: number; balanceAtSubmit: number }> {
+  const totalSources = items.reduce((sum, it) => sum + it.amount, 0);
+  const balRef = doc(db, 'periodBalances', balanceDocId(vendorId, year, month));
+  const adjRef = doc(db, 'balanceAdjustments', adjustmentId);
+
+  // Build human-readable date label for note
+  const now = new Date();
+  const dayStr = String(now.getDate()).padStart(2, '0');
+  const monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  const monthStr = monthNames[now.getMonth()];
+  const yearStr = now.getFullYear();
+  const note = `Penyesuaian Saldo ${dayStr} ${monthStr} ${yearStr}`;
+
+  let transactionId: string | null = null;
+  let balanceAtSubmit = 0;
+  let selisih = 0;
+
+  await runTransaction(db, async (txn) => {
+    const balSnap = await txn.get(balRef);
+
+    if (balSnap.exists()) {
+      balanceAtSubmit = balSnap.data().balance as number;
+    } else {
+      // Seed from previous period
+      const prevMonth = month === 1 ? 12 : month - 1;
+      const prevYear = month === 1 ? year - 1 : year;
+      const prevRef = doc(db, 'periodBalances', balanceDocId(vendorId, prevYear, prevMonth));
+      const prevSnap = await txn.get(prevRef);
+      balanceAtSubmit = prevSnap.exists() ? (prevSnap.data().balance as number) : 0;
+    }
+
+    selisih = balanceAtSubmit - totalSources;
+
+    let newBalance = balanceAtSubmit;
+    const txRef = doc(collection(db, 'transactions'));
+
+    if (selisih !== 0) {
+      transactionId = txRef.id;
+      const absSelisih = Math.abs(selisih);
+      const type = selisih > 0 ? 'OUT' : 'IN';
+      newBalance = selisih > 0 ? balanceAtSubmit - absSelisih : balanceAtSubmit + absSelisih;
+
+      // Write balance doc (create or update)
+      txn.set(
+        balRef,
+        { vendorId, year, month, balance: newBalance },
+        { merge: true }
+      );
+
+      // Write transaction doc
+      txn.set(txRef, {
+        vendorId,
+        type,
+        amount: absSelisih,
+        period: periodKey(year, month),
+        year,
+        month,
+        note,
+        createdBy,
+        createdByName: createdByName ?? null,
+        createdAt: serverTimestamp(),
+        categoryRef: null,
+        categoryName: null,
+      });
+    }
+
+    // Update adjustment doc to submitted
+    txn.update(adjRef, {
+      items,
+      totalSources,
+      balanceAtSubmit,
+      selisih,
+      transactionId: transactionId ?? null,
+      status: 'submitted',
+      year,
+      month,
+      submittedAt: serverTimestamp(),
+    });
+  });
+
+  return { transactionId, selisih, balanceAtSubmit };
+}
+
+/**
+ * Saves updated items to an existing draft (only allowed for status=draft).
+ */
+export async function updateAdjustmentDraft(
+  adjustmentId: string,
+  items: AdjustmentItemInput[]
+): Promise<void> {
+  const totalSources = items.reduce((sum, it) => sum + it.amount, 0);
+  const adjRef = doc(db, 'balanceAdjustments', adjustmentId);
+  await setDoc(adjRef, { items, totalSources }, { merge: true });
+}
+
+/**
+ * Fetches all balance adjustments for a vendor, sorted by createdAt desc.
+ */
+export async function getBalanceAdjustments(vendorId: string): Promise<BalanceAdjustment[]> {
+  const q = query(
+    collection(db, 'balanceAdjustments'),
+    where('vendorId', '==', vendorId),
+    orderBy('createdAt', 'desc')
+  );
+  const snap = await getDocs(q);
+
+  return snap.docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      vendorId: data.vendorId,
+      items: data.items ?? [],
+      totalSources: data.totalSources ?? 0,
+      balanceAtSubmit: data.balanceAtSubmit ?? null,
+      selisih: data.selisih ?? null,
+      transactionId: data.transactionId ?? null,
+      status: data.status ?? 'draft',
+      year: data.year ?? null,
+      month: data.month ?? null,
+      createdBy: data.createdBy,
+      createdByName: data.createdByName ?? null,
+      createdAt: toDate(data.createdAt),
+      submittedAt: toDate(data.submittedAt),
+    } as BalanceAdjustment;
+  });
+}
